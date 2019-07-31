@@ -17,8 +17,10 @@
 
 package com.github.robtimus.obfuscation.json;
 
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.checkBounds;
+import static com.github.robtimus.obfuscation.ObfuscatorUtils.checkStartAndEnd;
+import static com.github.robtimus.obfuscation.ObfuscatorUtils.copyTo;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.readAll;
+import static com.github.robtimus.obfuscation.ObfuscatorUtils.reader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -71,7 +73,7 @@ public class JSONObfuscator extends PropertyObfuscator {
 
     @Override
     public CharSequence obfuscateText(CharSequence s, int start, int end) {
-        checkBounds(s, start, end);
+        checkStartAndEnd(s, start, end);
         StringBuilder sb = new StringBuilder(end - start);
         try {
             obfuscateText(s, start, end, sb);
@@ -84,17 +86,18 @@ public class JSONObfuscator extends PropertyObfuscator {
 
     @Override
     public void obfuscateText(CharSequence s, int start, int end, Appendable destination) throws IOException {
-        checkBounds(s, start, end);
+        checkStartAndEnd(s, start, end);
         @SuppressWarnings("resource")
-        Reader input = new CharSequenceReader(s, start, end);
+        Reader input = reader(s, start, end);
         obfuscateText(input, s, start, end, destination);
     }
 
     @Override
     public void obfuscateText(Reader input, Appendable destination) throws IOException {
+        StringBuilder contents = new StringBuilder();
         @SuppressWarnings("resource")
-        CopyingReader reader = new CopyingReader(input);
-        obfuscateText(reader, reader.contents, 0, -1, destination);
+        Reader reader = copyTo(input, contents);
+        obfuscateText(reader, contents, 0, -1, destination);
     }
 
     private void obfuscateText(Reader input, CharSequence s, int start, int end, Appendable destination) throws IOException {
@@ -174,6 +177,7 @@ public class JSONObfuscator extends PropertyObfuscator {
         private final CharSequence text;
         private final Appendable destination;
 
+        private final int textOffset;
         private int textIndex;
 
         private JsonParser.Event event;
@@ -184,6 +188,7 @@ public class JSONObfuscator extends PropertyObfuscator {
         private Context(JsonParser jsonParser, CharSequence source, int start, Appendable destination) {
             this.jsonParser = jsonParser;
             this.text = source;
+            this.textOffset = start;
             this.textIndex = start;
             this.tokenEnd = start;
             this.destination = destination;
@@ -200,7 +205,10 @@ public class JSONObfuscator extends PropertyObfuscator {
              */
             if (jsonParser.hasNext()) {
                 tokenStart = (int) jsonParser.getLocation().getStreamOffset();
+int before = tokenStart;
                 event = jsonParser.next();
+long after = jsonParser.getLocation().getStreamOffset();
+System.out.printf("%d vs %d%n", before, after);
                 tokenValue = getTokenValue();
                 tokenStart = indexOfTokenValue();
                 tokenEnd = tokenStart + tokenValue.length();
@@ -242,15 +250,16 @@ public class JSONObfuscator extends PropertyObfuscator {
 
         private int indexOfTokenValue() {
             System.out.printf("%s: %s (%d) vs %d%n", tokenValue, jsonParser.getLocation(), jsonParser.getLocation().getStreamOffset(), tokenStart);
-            System.out.printf("%s vs %s%n", tokenValue, text.subSequence(1 + tokenStart, 1 + (int) jsonParser.getLocation().getStreamOffset()));
-            return (int) jsonParser.getLocation().getStreamOffset();
-//            int end = text.length() - tokenValue.length();
-//            for (int i = tokenEnd; i <= end; i++) {
-//                if (isTokenValue(i)) {
-//                    return i;
-//                }
-//            }
-//            throw new IllegalStateException(Messages.JSONObfuscator.tokenNotFound.get(tokenValue));
+            System.out.printf("%s vs %s%n", tokenValue, text.subSequence(textOffset + tokenStart, textOffset + (int) jsonParser.getLocation().getStreamOffset()));
+//            return (int) jsonParser.getLocation().getStreamOffset();
+            int end = text.length() - tokenValue.length();
+            for (int i = tokenEnd; i <= end; i++) {
+                if (isTokenValue(i)) {
+                    return i;
+                }
+            }
+            //throw new IllegalStateException(Messages.JSONObfuscator.tokenNotFound.get(tokenValue));
+            throw new IllegalStateException("not found: " + tokenValue);
         }
 
         private boolean isTokenValue(int index) {
