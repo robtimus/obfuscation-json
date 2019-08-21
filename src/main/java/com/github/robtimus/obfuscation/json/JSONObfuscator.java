@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Objects;
+import java.util.function.Function;
 import javax.json.JsonException;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonParser;
@@ -328,6 +329,22 @@ System.out.printf("%d vs %d%n", before, after);
         public JSONBuilder withMalformedJSONStrategy(MalformedJSONStrategy strategy) {
             this.malformedJSONStrategy = Objects.requireNonNull(strategy);
             return this;
+        }
+
+        /**
+         * This method allows the application of a function to this builder.
+         * <p>
+         * Any exception thrown by the function will be propagated to the caller.
+         * <p>
+         * This method is similar to {@link #transform(Function)}, but it allows a function that takes a {@code JSONBuilder},
+         * instead of having to take a {@link com.github.robtimus.obfuscation.PropertyObfuscator.Builder Builder} and requiring a cast.
+         *
+         * @param <R> The type of the result of the function.
+         * @param f The function to apply.
+         * @return The result of applying the function to this builder.
+         */
+        public <R> R transformJSON(Function<? super JSONBuilder, ? extends R> f) {
+            return f.apply(this);
         }
 
         @Override
