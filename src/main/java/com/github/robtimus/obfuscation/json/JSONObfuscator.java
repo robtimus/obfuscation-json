@@ -19,16 +19,20 @@ package com.github.robtimus.obfuscation.json;
 
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.checkStartAndEnd;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.copyTo;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.readAll;
+import static com.github.robtimus.obfuscation.ObfuscatorUtils.discardAll;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.reader;
+import static com.github.robtimus.obfuscation.ObfuscatorUtils.writer;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.Objects;
-import java.util.function.Function;
+import java.util.Collections;
+import java.util.Map;
 import javax.json.JsonException;
 import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
 import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,35 +45,23 @@ import com.github.robtimus.obfuscation.PropertyObfuscator;
  *
  * @author Rob Spoor
  */
-public class JSONObfuscator extends PropertyObfuscator {
+public final class JSONObfuscator extends PropertyObfuscator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JSONObfuscator.class);
 
-    /** The obfuscator type, as can be used in {@link PropertyObfuscator#ofType(String)}. */
-    public static final String TYPE = "json"; //$NON-NLS-1$
+    private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
 
-    private static final JSONObfuscatorFactory FACTORY = new JSONObfuscatorFactory();
+    private final JsonGeneratorFactory jsonGeneratorFactory;
 
-    private static final boolean DEFAULT_INCLUDE_MALFORMED_JSON_WARNING = true;
-    private static final MalformedJSONStrategy DEFAULT_MALFORMED_JSON_STRATEGY = MalformedJSONStrategy.DISCARD_REMAINDER;
+    private final String malformedJSONWarning;
 
-    private final boolean includeMalformedJSONWarning;
-    private final MalformedJSONStrategy malformedJSONStrategy;
-
-    private final JsonProvider jsonProvider;
-
-    JSONObfuscator(Builder builder) {
+    private JSONObfuscator(Builder builder) {
         super(builder);
-        if (builder instanceof JSONBuilder) {
-            JSONBuilder jsonBuilder = (JSONBuilder) builder;
-            includeMalformedJSONWarning = jsonBuilder.includeMalformedJSONWarning;
-            malformedJSONStrategy = jsonBuilder.malformedJSONStrategy;
-        } else {
-            includeMalformedJSONWarning = DEFAULT_INCLUDE_MALFORMED_JSON_WARNING;
-            malformedJSONStrategy = DEFAULT_MALFORMED_JSON_STRATEGY;
-        }
 
-        jsonProvider = JsonProvider.provider();
+        Map<String, ?> config = builder.prettyPrint ? Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true) : Collections.emptyMap();
+        jsonGeneratorFactory = JSON_PROVIDER.createGeneratorFactory(config);
+
+        malformedJSONWarning = builder.malformedJSONWarning;
     }
 
     @Override
@@ -90,7 +82,9 @@ public class JSONObfuscator extends PropertyObfuscator {
         checkStartAndEnd(s, start, end);
         @SuppressWarnings("resource")
         Reader input = reader(s, start, end);
-        obfuscateText(input, s, start, end, destination);
+        @SuppressWarnings("resource")
+        JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(destination));
+        obfuscateText(input, s, end, writer);
     }
 
     @Override
@@ -98,180 +92,143 @@ public class JSONObfuscator extends PropertyObfuscator {
         StringBuilder contents = new StringBuilder();
         @SuppressWarnings("resource")
         Reader reader = copyTo(input, contents);
-        obfuscateText(reader, contents, 0, -1, destination);
+        @SuppressWarnings("resource")
+        JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(destination));
+        obfuscateText(reader, contents, -1, writer);
     }
 
-    private void obfuscateText(Reader input, CharSequence s, int start, int end, Appendable destination) throws IOException {
-        JsonParser jsonParser = jsonProvider.createParser(input);
-        Context context = new Context(jsonParser, s, start, destination);
+    private void obfuscateText(Reader input, CharSequence s, int end, JSONObfuscatorWriter writer) throws IOException {
+
         try {
-            while (context.update(true)) {
-                if (context.event == JsonParser.Event.KEY_NAME) {
-                    String property = context.tokenValue;
-                    Obfuscator obfuscator = getObfuscator(property);
+            @SuppressWarnings("resource")
+            JsonParser jsonParser = JSON_PROVIDER.createParser(input);
+            @SuppressWarnings("resource")
+            JsonGenerator jsonGenerator = jsonGeneratorFactory.createGenerator(writer);
+
+            // depth > 0 means that an entire object or array needs to be obfuscated.
+            int depth = 0;
+            // obfuscator != null means the current value needs be obfuscated.
+            Obfuscator obfuscator = null;
+            Event event = null;
+
+            // The below will flush the jsonGenerator after each write, so writes are done to the correct writer at the time
+            while (jsonParser.hasNext()) {
+                event = jsonParser.next();
+                switch (event) {
+                case START_OBJECT:
+                case START_ARRAY:
                     if (obfuscator != null) {
-                        obfuscateProperty(obfuscator, context);
+                        if (depth == 0) {
+                            // The start of obfuscating an object or array; the object or array should be obfuscated completely
+                            writer.startObfuscate(obfuscator);
+                        }
+                        depth++;
                     }
+                    if (event == Event.START_OBJECT) {
+                        jsonGenerator.writeStartObject();
+                    } else {
+                        jsonGenerator.writeStartArray();
+                    }
+                    jsonGenerator.flush();
+                    break;
+                case END_OBJECT:
+                case END_ARRAY:
+                    jsonGenerator.writeEnd();
+                    jsonGenerator.flush();
+                    if (depth > 0) {
+                        depth--;
+                        if (depth == 0) {
+                            // The end of obfuscating an object or array; the delegate is the obfuscator's stream, so close it to finish obfuscation
+                            writer.endObfuscate();
+                            obfuscator = null;
+                        }
+                    }
+                    break;
+                case KEY_NAME:
+                    String propertyName = jsonParser.getString();
+                    if (obfuscator == null) {
+                        obfuscator = getObfuscator(propertyName);
+                    }
+                    jsonGenerator.writeKey(propertyName);
+                    jsonGenerator.flush();
+                    break;
+                case VALUE_STRING:
+                    if (obfuscator != null && depth == 0) {
+                        // Only this value needs to be obfuscated
+                        obfuscateValue(jsonParser.getString(), obfuscator, jsonGenerator, writer, true);
+                        obfuscator = null;
+                   } else {
+                        // Either not obfuscating, or nested in an object or array that will be obfuscated; write the value as-is.
+                       jsonGenerator.write(jsonParser.getString());
+                    }
+                    break;
+                case VALUE_NULL:
+                    if (obfuscator != null && depth == 0) {
+                        // Only this value needs to be obfuscated
+                        obfuscateValue("null", obfuscator, jsonGenerator, writer, false); //$NON-NLS-1$
+                        obfuscator = null;
+                    } else {
+                        // Either not obfuscating, or nested in an object or array that will be obfuscated
+                        jsonGenerator.writeNull();
+                    }
+                    break;
+                case VALUE_NUMBER:
+                    if (obfuscator != null && depth == 0) {
+                        // Only this value needs to be obfuscated
+                        obfuscateValue(jsonParser.getString(), obfuscator, jsonGenerator, writer, false);
+                        obfuscator = null;
+                    } else {
+                        // Either not obfuscating, or nested in an object or array that will be obfuscated
+                        if (jsonParser.isIntegralNumber()) {
+                            jsonGenerator.write(jsonParser.getLong());
+                        } else {
+                            jsonGenerator.write(jsonParser.getBigDecimal());
+                        }
+                    }
+                    break;
+                case VALUE_TRUE:
+                case VALUE_FALSE:
+                    if (obfuscator != null && depth == 0) {
+                        // Only this value needs to be obfuscated
+                        obfuscateValue(Boolean.toString(event == Event.VALUE_TRUE), obfuscator, jsonGenerator, writer, false);
+                        obfuscator = null;
+                    } else {
+                        // Either not obfuscating, or nested in an object or array that will be obfuscated
+                        jsonGenerator.write(event == Event.VALUE_TRUE);
+                    }
+                    break;
+                default:
+                    LOGGER.warn(Messages.JSONObfuscator.unexpectedEvent.get(event));
+                    break;
                 }
             }
-            // read the remainder so the final append will include all text
-            readAll(input);
-            destination.append(s, context.textIndex, end == -1 ? s.length() : end);
+            // Read the remainder so the final append will include all text
+            discardAll(input);
+            writer.assertNonObfuscating();
+            int index = end == -1 ? s.length() : end;
+            writer.append(s, index, end == -1 ? s.length() : end);
         } catch (JsonParsingException e) {
             LOGGER.warn(Messages.JSONObfuscator.malformedJSON.warning.get(), e);
-            if (includeMalformedJSONWarning) {
-                context.destination.append(Messages.JSONObfuscator.malformedJSON.text.get());
+            writer.endObfuscating();
+            if (malformedJSONWarning != null) {
+                writer.write(malformedJSONWarning);
             }
-            // read the remainder, because the strategy may need it
-            readAll(input);
-            malformedJSONStrategy.handleMalformedJSON(context, end);
         } catch (JsonException e) {
             throw new IOException(e);
         }
     }
 
-    private void obfuscateProperty(Obfuscator obfuscator, Context context) throws IOException {
-        context.update(true);
-        switch (context.event) {
-        case START_ARRAY:
-            obfuscateNested(obfuscator, context, JsonParser.Event.START_ARRAY, JsonParser.Event.END_ARRAY);
-            break;
-        case START_OBJECT:
-            obfuscateNested(obfuscator, context, JsonParser.Event.START_OBJECT, JsonParser.Event.END_OBJECT);
-            break;
-        case VALUE_STRING:
-        case VALUE_NUMBER:
-        case VALUE_TRUE:
-        case VALUE_FALSE:
-        case VALUE_NULL:
-            obfuscateScalar(obfuscator, context);
-            break;
-        default:
-            // do nothing
-        }
-    }
+    private void obfuscateValue(String value, Obfuscator obfuscator, JsonGenerator jsonGenerator, JSONObfuscatorWriter writer, boolean quote)
+            throws IOException {
 
-    private void obfuscateNested(Obfuscator obfuscator, Context context, JsonParser.Event beginEvent, JsonParser.Event endEvent) throws IOException {
-        int originalTokenStart = context.tokenStart;
-        int depth = 1;
-        while (depth > 0) {
-            context.update(false);
-            if (context.event == beginEvent) {
-                depth++;
-            } else if (context.event == endEvent) {
-                depth--;
-            }
-        }
-        context.destination.append(context.text, context.textIndex, originalTokenStart);
-        obfuscator.obfuscateText(context.text, originalTokenStart, context.tokenEnd, context.destination);
-        context.textIndex = context.tokenEnd;
-    }
-
-    private void obfuscateScalar(Obfuscator obfuscator, Context context) throws IOException {
-        context.destination.append(context.text, context.textIndex, context.tokenStart);
-        obfuscator.obfuscateText(context.tokenValue, context.destination);
-        context.textIndex = context.tokenEnd;
-    }
-
-    private static final class Context {
-        private final JsonParser jsonParser;
-        private final CharSequence text;
-        private final Appendable destination;
-
-        private final int textOffset;
-        private int textIndex;
-
-        private JsonParser.Event event;
-        private String tokenValue;
-        private int tokenStart;
-        private int tokenEnd;
-
-        private Context(JsonParser jsonParser, CharSequence source, int start, Appendable destination) {
-            this.jsonParser = jsonParser;
-            this.text = source;
-            this.textOffset = start;
-            this.textIndex = start;
-            this.tokenEnd = start;
-            this.destination = destination;
-        }
-
-        private boolean update(boolean append) throws IOException {
-            /*
-             * This method could be split into separate methods:
-             * 1) update token only
-             * 2) update the other token values,
-             * This would mean that indexOfTokenValue will take longer if tokens are ignored though. In then end the same scanning is performed.
-             * Plus, it could possibly lead to wrong values being matched if two properties have the same value but only the second needs to be
-             * obfuscated.
-             */
-            if (jsonParser.hasNext()) {
-                tokenStart = (int) jsonParser.getLocation().getStreamOffset();
-int before = tokenStart;
-                event = jsonParser.next();
-long after = jsonParser.getLocation().getStreamOffset();
-System.out.printf("%d vs %d%n", before, after);
-                tokenValue = getTokenValue();
-                tokenStart = indexOfTokenValue();
-                tokenEnd = tokenStart + tokenValue.length();
-                if (append) {
-                    destination.append(text, textIndex, tokenStart);
-                    textIndex = tokenStart;
-                }
-                return true;
-            }
-            return false;
-        }
-
-        private String getTokenValue() {
-            switch (event) {
-            case START_ARRAY:
-                return "["; //$NON-NLS-1$
-            case END_ARRAY:
-                return "]"; //$NON-NLS-1$
-            case START_OBJECT:
-                return "{"; //$NON-NLS-1$
-            case END_OBJECT:
-                return "}"; //$NON-NLS-1$
-            case KEY_NAME:
-                return jsonParser.getString();
-            case VALUE_STRING:
-            case VALUE_NUMBER:
-                // use String representation
-                return jsonParser.getString();
-            case VALUE_TRUE:
-                return "true"; //$NON-NLS-1$
-            case VALUE_FALSE:
-                return "false"; //$NON-NLS-1$
-            case VALUE_NULL:
-                return "null"; //$NON-NLS-1$
-            default:
-                throw new IllegalStateException(Messages.JSONObfuscator.unexpectedEvent.get(event));
-            }
-        }
-
-        private int indexOfTokenValue() {
-            System.out.printf("%s: %s (%d) vs %d%n", tokenValue, jsonParser.getLocation(), jsonParser.getLocation().getStreamOffset(), tokenStart);
-            System.out.printf("%s vs %s%n", tokenValue, text.subSequence(textOffset + tokenStart, textOffset + (int) jsonParser.getLocation().getStreamOffset()));
-//            return (int) jsonParser.getLocation().getStreamOffset();
-            int end = text.length() - tokenValue.length();
-            for (int i = tokenEnd; i <= end; i++) {
-                if (isTokenValue(i)) {
-                    return i;
-                }
-            }
-            //throw new IllegalStateException(Messages.JSONObfuscator.tokenNotFound.get(tokenValue));
-            throw new IllegalStateException("not found: " + tokenValue);
-        }
-
-        private boolean isTokenValue(int index) {
-            for (int i = 0, j = index; i < tokenValue.length(); i++, j++) {
-                char c1 = tokenValue.charAt(i);
-                char c2 = text.charAt(j);
-                if (c1 != c2) {
-                    return false;
-                }
-            }
-            return true;
+        if (quote) {
+            jsonGenerator.write(obfuscator.obfuscateText(value).toString());
+            jsonGenerator.flush();
+        } else {
+            writer.startUnquote();
+            jsonGenerator.write(obfuscator.obfuscateText(value).toString());
+            jsonGenerator.flush();
+            writer.endUnquote();
         }
     }
 
@@ -285,8 +242,8 @@ System.out.printf("%d vs %d%n", before, after);
      *
      * @return A builder that will create {@code JSONObfuscators}.
      */
-    public static JSONBuilder builder() {
-        return new JSONBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -294,89 +251,41 @@ System.out.printf("%d vs %d%n", before, after);
      *
      * @author Rob Spoor
      */
-    public static final class JSONBuilder extends Builder {
+    public static final class Builder extends AbstractBuilder<Builder> {
 
-        private boolean includeMalformedJSONWarning = DEFAULT_INCLUDE_MALFORMED_JSON_WARNING;
-        private MalformedJSONStrategy malformedJSONStrategy = DEFAULT_MALFORMED_JSON_STRATEGY;
+        private boolean prettyPrint = true;
 
-        private JSONBuilder() {
-            super(FACTORY);
-        }
+        private String malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
 
-        @Override
-        public JSONBuilder withProperty(String property, Obfuscator obfuscator) {
-            super.withProperty(property, obfuscator);
-            return this;
+        private Builder() {
         }
 
         /**
-         * Sets whether or not to include a warning if a {@link JsonParsingException} is thrown. The default is {@code true}.
+         * Sets whether or not to pretty-print obfuscated JSON. The default is {@code true}.
          *
-         * @param include {@code true} to include a warning, or {@code false} otherwise.
+         * @param prettyPrint {@code true} to pretty-print obfuscated JSON, or {@code false} otherwise.
          * @return This object.
          */
-        public JSONBuilder includeMalformedJSONWarning(boolean include) {
-            includeMalformedJSONWarning = include;
+        public Builder withPrettyPrinting(boolean prettyPrint) {
+            this.prettyPrint = prettyPrint;
             return this;
         }
 
         /**
-         * Sets the malformed JSON strategy to use. The default is {@link MalformedJSONStrategy#DISCARD_REMAINDER}.
+         * Sets the warning to include if a {@link JsonParsingException} is thrown.
+         * This can be used to override the default message. Use {@code null} to omit the warning.
          *
-         * @param strategy The malformed JSON strategy to use.
+         * @param warning The warning to include.
          * @return This object.
          */
-        public JSONBuilder withMalformedJSONStrategy(MalformedJSONStrategy strategy) {
-            this.malformedJSONStrategy = Objects.requireNonNull(strategy);
+        public Builder withMalformedJSONWarning(String warning) {
+            malformedJSONWarning = warning;
             return this;
-        }
-
-        /**
-         * This method allows the application of a function to this builder.
-         * <p>
-         * Any exception thrown by the function will be propagated to the caller.
-         * <p>
-         * This method is similar to {@link #transform(Function)}, but it allows a function that takes a {@code JSONBuilder},
-         * instead of having to take a {@link com.github.robtimus.obfuscation.PropertyObfuscator.Builder Builder} and requiring a cast.
-         *
-         * @param <R> The type of the result of the function.
-         * @param f The function to apply.
-         * @return The result of applying the function to this builder.
-         */
-        public <R> R transformJSON(Function<? super JSONBuilder, ? extends R> f) {
-            return f.apply(this);
         }
 
         @Override
         public JSONObfuscator build() {
-            return (JSONObfuscator) super.build();
+            return new JSONObfuscator(this);
         }
-    }
-
-    /**
-     * A strategy for dealing with {@link JsonParsingException JsonParsingExceptions} while obfuscating text.
-     * If a {@code JsonParsingException} is thrown, a warning may be appended indicating that obfuscation is aborted (depending on the setting).
-     * The strategy determines what happens next.
-     *
-     * @author Rob Spoor
-     */
-    public enum MalformedJSONStrategy {
-        /** Indicates that the remainder of the text should be discarded. Only the warning will be appended. This is the default strategy. */
-        DISCARD_REMAINDER {
-            @Override
-            void handleMalformedJSON(Context context, int end) throws IOException {
-                // don't do anything
-            }
-        },
-        /** Indicates that the remainder of the text should be included after the warning. */
-        INCLUDE_REMAINDER {
-            @Override
-            void handleMalformedJSON(Context context, int end) throws IOException {
-                context.destination.append(context.text, context.textIndex, end == -1 ? context.text.length() : end);
-            }
-        },
-        ;
-
-        abstract void handleMalformedJSON(Context context, int end) throws IOException;
     }
 }
