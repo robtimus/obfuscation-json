@@ -27,6 +27,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import javax.json.JsonException;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
@@ -53,12 +54,14 @@ public final class JSONObfuscator extends PropertyObfuscator {
 
     private final JsonGeneratorFactory jsonGeneratorFactory;
 
+    private final boolean prettyPrint;
     private final String malformedJSONWarning;
 
     private JSONObfuscator(Builder builder) {
         super(builder);
 
-        Map<String, ?> config = builder.prettyPrint ? Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true) : Collections.emptyMap();
+        prettyPrint = builder.prettyPrint;
+        Map<String, ?> config = prettyPrint ? Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true) : Collections.emptyMap();
         jsonGeneratorFactory = JSON_PROVIDER.createGeneratorFactory(config);
 
         malformedJSONWarning = builder.malformedJSONWarning;
@@ -235,6 +238,30 @@ public final class JSONObfuscator extends PropertyObfuscator {
     @Override
     public Writer streamTo(Appendable destination) {
         return new CachingObfuscatingWriter(this, destination);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        JSONObfuscator other = (JSONObfuscator) o;
+        return prettyPrint == other.prettyPrint && Objects.equals(malformedJSONWarning, other.malformedJSONWarning);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode() ^ Boolean.hashCode(prettyPrint) ^ Objects.hashCode(malformedJSONWarning);
+    }
+
+    @Override
+    @SuppressWarnings("nls")
+    public String toString() {
+        return getClass().getName()
+                + "[obfuscators=" + obfuscators()
+                + ",prettyPrint=" + prettyPrint
+                + ",malformedJSONWarning=" + malformedJSONWarning
+                + "]";
     }
 
     /**
