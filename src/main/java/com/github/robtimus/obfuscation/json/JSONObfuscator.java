@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.robtimus.obfuscation.CachingObfuscatingWriter;
 import com.github.robtimus.obfuscation.Obfuscator;
+import com.github.robtimus.obfuscation.PropertyAwareBuilder;
 import com.github.robtimus.obfuscation.PropertyObfuscator;
 
 /**
@@ -278,13 +279,14 @@ public final class JSONObfuscator extends PropertyObfuscator {
      *
      * @author Rob Spoor
      */
-    public static final class Builder extends AbstractBuilder<Builder> {
+    public static final class Builder extends PropertyAwareBuilder<Builder, JSONObfuscator> {
 
         private boolean prettyPrint = true;
 
         private String malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
 
         private Builder() {
+            super();
         }
 
         /**
