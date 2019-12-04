@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.Builder;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.ObfuscationMode;
 
 @SuppressWarnings({ "javadoc", "nls" })
 @TestInstance(Lifecycle.PER_CLASS)
@@ -81,27 +82,56 @@ public class JSONObfuscatorTest {
     public class ValidJSON {
 
         @Nested
-        @DisplayName("pretty printed")
-        public class PrettyPrinted extends ValidJSONTest {
+        @DisplayName("ObfuscationMode.ALL")
+        public class ObfuscatingAll {
 
-            public PrettyPrinted() {
-                super("JSONObfuscator.expected.valid.pretty-printed", true);
+            @Nested
+            @DisplayName("pretty printed")
+            public class PrettyPrinted extends ValidJSONTest {
+
+                public PrettyPrinted() {
+                    super("JSONObfuscator.expected.valid.all.pretty-printed", ObfuscationMode.ALL, true);
+                }
+            }
+
+            @Nested
+            @DisplayName("not pretty printed")
+            public class NotPrettyPrinted extends ValidJSONTest {
+
+                public NotPrettyPrinted() {
+                    super("JSONObfuscator.expected.valid.all", ObfuscationMode.ALL, false);
+                }
             }
         }
 
         @Nested
-        @DisplayName("not pretty printed")
-        public class NotPrettyPrinted extends ValidJSONTest {
+        @DisplayName("ObfuscationMode.SCALAR")
+        @TestInstance(Lifecycle.PER_CLASS)
+        public class ObfuscatingScalars {
 
-            public NotPrettyPrinted() {
-                super("JSONObfuscator.expected.valid", false);
+            @Nested
+            @DisplayName("pretty printed")
+            public class PrettyPrinted extends ValidJSONTest {
+
+                public PrettyPrinted() {
+                    super("JSONObfuscator.expected.valid.scalar.pretty-printed", ObfuscationMode.SCALAR, true);
+                }
+            }
+
+            @Nested
+            @DisplayName("not pretty printed")
+            public class NotPrettyPrinted extends ValidJSONTest {
+
+                public NotPrettyPrinted() {
+                    super("JSONObfuscator.expected.valid.scalar", ObfuscationMode.SCALAR, false);
+                }
             }
         }
 
         private class ValidJSONTest extends ObfuscatorTest {
 
-            protected ValidJSONTest(String expectedResource, boolean prettyPrint) {
-                super("JSONObfuscator.input.valid.json", expectedResource, () -> createObfuscator(prettyPrint));
+            protected ValidJSONTest(String expectedResource, ObfuscationMode obfuscationMode, boolean prettyPrint) {
+                super("JSONObfuscator.input.valid.json", expectedResource, () -> createObfuscator(obfuscationMode, prettyPrint));
             }
         }
     }
@@ -246,6 +276,13 @@ public class JSONObfuscatorTest {
             }
             assertEquals(expected, writer.toString());
         }
+    }
+
+    private static Obfuscator createObfuscator(ObfuscationMode obfuscationMode, boolean prettyPrint) {
+        return builder()
+                .withObfuscationMode(obfuscationMode)
+                .withPrettyPrinting(prettyPrint)
+                .transform(JSONObfuscatorTest::createObfuscator);
     }
 
     private static Obfuscator createObfuscator(boolean prettyPrint) {

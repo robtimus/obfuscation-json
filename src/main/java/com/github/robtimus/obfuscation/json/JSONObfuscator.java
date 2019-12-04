@@ -52,7 +52,31 @@ public final class JSONObfuscator extends Obfuscator {
 
     private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
 
+    /**
+     * The possible obfuscation modes.
+     *
+     * @author Rob Spoor
+     */
+    public enum ObfuscationMode {
+        /** Indicates only scalar properties (strings, numbers, booleans, nulls) will be obfuscated, not arrays or objects. */
+        SCALAR(false, false),
+
+        /** Indicates all properties will be obfuscated, including arrays and objects. */
+        ALL(true, true),
+        ;
+
+        private final boolean obfuscateArrays;
+        private final boolean obfuscateObjects;
+
+        ObfuscationMode(boolean obfuscateArrays, boolean obfuscateObjects) {
+            this.obfuscateArrays = obfuscateArrays;
+            this.obfuscateObjects = obfuscateObjects;
+        }
+    }
+
     private final Map<String, Obfuscator> obfuscators;
+    private final boolean caseInsensitivePropertyNames;
+    private final ObfuscationMode obfuscationMode;
 
     private final JsonGeneratorFactory jsonGeneratorFactory;
 
@@ -61,6 +85,8 @@ public final class JSONObfuscator extends Obfuscator {
 
     private JSONObfuscator(Builder builder) {
         obfuscators = builder.obfuscators();
+        caseInsensitivePropertyNames = builder.caseInsensitivePropertyNames();
+        obfuscationMode = builder.obfuscationMode;
 
         prettyPrint = builder.prettyPrint;
         Map<String, ?> config = prettyPrint ? Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true) : Collections.emptyMap();
@@ -117,6 +143,11 @@ public final class JSONObfuscator extends Obfuscator {
                 switch (event) {
                 case START_OBJECT:
                 case START_ARRAY:
+                    if (obfuscator != null && depth == 0 && !obfuscateNonScalarValue(event)) {
+                        // there is an obfuscator for the object or array property, but the obfuscation mode prohibits obfuscating objects / arrays;
+                        // reset the obfuscator so this property will not be obfuscated
+                        obfuscator = null;
+                    }
                     if (obfuscator != null) {
                         if (depth == 0) {
                             // The start of obfuscating an object or array; the object or array should be obfuscated completely
@@ -218,6 +249,11 @@ public final class JSONObfuscator extends Obfuscator {
         }
     }
 
+    private boolean obfuscateNonScalarValue(Event event) {
+        assert event == Event.START_ARRAY || event == Event.START_OBJECT : "Should only be called for array or object start"; //$NON-NLS-1$
+        return event == Event.START_ARRAY ? obfuscationMode.obfuscateArrays : obfuscationMode.obfuscateObjects;
+    }
+
     private void obfuscateValue(String value, Obfuscator obfuscator, JsonGenerator jsonGenerator, JSONObfuscatorWriter writer, boolean quote)
             throws IOException {
 
@@ -247,13 +283,15 @@ public final class JSONObfuscator extends Obfuscator {
         }
         JSONObfuscator other = (JSONObfuscator) o;
         return obfuscators.equals(other.obfuscators)
+                && caseInsensitivePropertyNames == other.caseInsensitivePropertyNames
+                && obfuscationMode == other.obfuscationMode
                 && prettyPrint == other.prettyPrint
                 && Objects.equals(malformedJSONWarning, other.malformedJSONWarning);
     }
 
     @Override
     public int hashCode() {
-        return obfuscators.hashCode() ^ Boolean.hashCode(prettyPrint) ^ Objects.hashCode(malformedJSONWarning);
+        return obfuscators.hashCode() ^ obfuscationMode.hashCode() ^ Boolean.hashCode(prettyPrint) ^ Objects.hashCode(malformedJSONWarning);
     }
 
     @Override
@@ -261,6 +299,8 @@ public final class JSONObfuscator extends Obfuscator {
     public String toString() {
         return getClass().getName()
                 + "[obfuscators=" + obfuscators
+                + ",caseInsensitivePropertyNames=" + caseInsensitivePropertyNames
+                + ",obfuscationMode=" + obfuscationMode
                 + ",prettyPrint=" + prettyPrint
                 + ",malformedJSONWarning=" + malformedJSONWarning
                 + "]";
@@ -282,12 +322,26 @@ public final class JSONObfuscator extends Obfuscator {
      */
     public static final class Builder extends PropertyAwareBuilder<Builder, JSONObfuscator> {
 
+        private ObfuscationMode obfuscationMode = ObfuscationMode.ALL;
+
         private boolean prettyPrint = true;
 
         private String malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
 
         private Builder() {
             super();
+        }
+
+        /**
+         * Sets the obfuscation mode. The default is {@link ObfuscationMode#ALL}.
+         *
+         * @param obfuscationMode The obfuscation mode.
+         * @return This object.
+         * @throws NullPointerException If the givne obfuscation mode is {@code null}.
+         */
+        public Builder withObfuscationMode(ObfuscationMode obfuscationMode) {
+            this.obfuscationMode = Objects.requireNonNull(obfuscationMode);
+            return this;
         }
 
         /**
