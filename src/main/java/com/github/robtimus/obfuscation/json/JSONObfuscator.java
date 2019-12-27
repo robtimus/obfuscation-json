@@ -28,6 +28,7 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import javax.json.JsonException;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
@@ -39,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.robtimus.obfuscation.CachingObfuscatingWriter;
 import com.github.robtimus.obfuscation.Obfuscator;
-import com.github.robtimus.obfuscation.PropertyAwareBuilder;
+import com.github.robtimus.obfuscation.StringMap;
 
 /**
  * An obfuscator that obfuscates JSON properties in {@link CharSequence CharSequences} or the contents of {@link Reader Readers}.
@@ -74,8 +75,7 @@ public final class JSONObfuscator extends Obfuscator {
         }
     }
 
-    private final Map<String, Obfuscator> obfuscators;
-    private final boolean caseInsensitivePropertyNames;
+    private final StringMap<Obfuscator> obfuscators;
     private final ObfuscationMode obfuscationMode;
 
     private final JsonGeneratorFactory jsonGeneratorFactory;
@@ -85,7 +85,6 @@ public final class JSONObfuscator extends Obfuscator {
 
     private JSONObfuscator(Builder builder) {
         obfuscators = builder.obfuscators();
-        caseInsensitivePropertyNames = builder.caseInsensitivePropertyNames();
         obfuscationMode = builder.obfuscationMode;
 
         prettyPrint = builder.prettyPrint;
@@ -283,7 +282,6 @@ public final class JSONObfuscator extends Obfuscator {
         }
         JSONObfuscator other = (JSONObfuscator) o;
         return obfuscators.equals(other.obfuscators)
-                && caseInsensitivePropertyNames == other.caseInsensitivePropertyNames
                 && obfuscationMode == other.obfuscationMode
                 && prettyPrint == other.prettyPrint
                 && Objects.equals(malformedJSONWarning, other.malformedJSONWarning);
@@ -299,7 +297,6 @@ public final class JSONObfuscator extends Obfuscator {
     public String toString() {
         return getClass().getName()
                 + "[obfuscators=" + obfuscators
-                + ",caseInsensitivePropertyNames=" + caseInsensitivePropertyNames
                 + ",obfuscationMode=" + obfuscationMode
                 + ",prettyPrint=" + prettyPrint
                 + ",malformedJSONWarning=" + malformedJSONWarning
@@ -320,16 +317,48 @@ public final class JSONObfuscator extends Obfuscator {
      *
      * @author Rob Spoor
      */
-    public static final class Builder extends PropertyAwareBuilder<Builder, JSONObfuscator> {
+    public static final class Builder {
 
-        private ObfuscationMode obfuscationMode = ObfuscationMode.ALL;
+        private final StringMap.Builder<Obfuscator> obfuscators;
 
-        private boolean prettyPrint = true;
+        private ObfuscationMode obfuscationMode;
 
-        private String malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
+        private boolean prettyPrint;
+
+        private String malformedJSONWarning;
 
         private Builder() {
-            super();
+            obfuscators = StringMap.builder();
+            obfuscationMode = ObfuscationMode.ALL;
+            prettyPrint = true;
+            malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
+        }
+
+        /**
+         * Adds a property to obfuscate.
+         *
+         * @param property The name of the property. It will be treated case sensitively.
+         * @param obfuscator The obfuscator to use for obfuscating the property.
+         * @return This object.
+         * @throws NullPointerException If the given property name or obfuscator is {@code null}.
+         */
+        public Builder withProperty(String property, Obfuscator obfuscator) {
+            return withProperty(property, obfuscator, true);
+        }
+
+        /**
+         * Adds a property to obfuscate.
+         *
+         * @param property The name of the property.
+         * @param obfuscator The obfuscator to use for obfuscating the property.
+         * @param caseSensitive {@code true} if the property name should be treated case sensitively,
+         *                          or {@code false} if it should be treated case insensitively.
+         * @return This object.
+         * @throws NullPointerException If the given property name or obfuscator is {@code null}.
+         */
+        public Builder withProperty(String property, Obfuscator obfuscator, boolean caseSensitive) {
+            obfuscators.withEntry(property, obfuscator, caseSensitive);
+            return this;
         }
 
         /**
@@ -367,7 +396,28 @@ public final class JSONObfuscator extends Obfuscator {
             return this;
         }
 
-        @Override
+        /**
+         * This method allows the application of a function to this builder.
+         * <p>
+         * Any exception thrown by the function will be propagated to the caller.
+         *
+         * @param <R> The type of the result of the function.
+         * @param f The function to apply.
+         * @return The result of applying the function to this builder.
+         */
+        public <R> R transform(Function<? super Builder, ? extends R> f) {
+            return f.apply(this);
+        }
+
+        private StringMap<Obfuscator> obfuscators() {
+            return obfuscators.build();
+        }
+
+        /**
+         * Creates a new {@code JSONObfuscator} with the properties and obfuscators added to this builder.
+         *
+         * @return The created {@code JSONObfuscator}.
+         */
         public JSONObfuscator build() {
             return new JSONObfuscator(this);
         }
