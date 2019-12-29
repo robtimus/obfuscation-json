@@ -20,6 +20,7 @@ package com.github.robtimus.obfuscation.json;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.checkStartAndEnd;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.copyTo;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.discardAll;
+import static com.github.robtimus.obfuscation.ObfuscatorUtils.map;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.reader;
 import static com.github.robtimus.obfuscation.ObfuscatorUtils.writer;
 import java.io.IOException;
@@ -40,7 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.robtimus.obfuscation.CachingObfuscatingWriter;
 import com.github.robtimus.obfuscation.Obfuscator;
-import com.github.robtimus.obfuscation.StringMap;
+import com.github.robtimus.obfuscation.ObfuscatorUtils.MapBuilder;
 
 /**
  * An obfuscator that obfuscates JSON properties in {@link CharSequence CharSequences} or the contents of {@link Reader Readers}.
@@ -75,7 +76,7 @@ public final class JSONObfuscator extends Obfuscator {
         }
     }
 
-    private final StringMap<Obfuscator> obfuscators;
+    private final Map<String, Obfuscator> obfuscators;
     private final ObfuscationMode obfuscationMode;
 
     private final JsonGeneratorFactory jsonGeneratorFactory;
@@ -319,7 +320,7 @@ public final class JSONObfuscator extends Obfuscator {
      */
     public static final class Builder {
 
-        private final StringMap.Builder<Obfuscator> obfuscators;
+        private final MapBuilder<Obfuscator> obfuscators;
 
         private ObfuscationMode obfuscationMode;
 
@@ -328,7 +329,7 @@ public final class JSONObfuscator extends Obfuscator {
         private String malformedJSONWarning;
 
         private Builder() {
-            obfuscators = StringMap.builder();
+            obfuscators = map();
             obfuscationMode = ObfuscationMode.ALL;
             prettyPrint = true;
             malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
@@ -336,6 +337,7 @@ public final class JSONObfuscator extends Obfuscator {
 
         /**
          * Adds a property to obfuscate.
+         * This method is an alias for {@link #withProperty(String, Obfuscator, boolean) withProperty(property, obfuscator, true)}.
          *
          * @param property The name of the property. It will be treated case sensitively.
          * @param obfuscator The obfuscator to use for obfuscating the property.
@@ -409,7 +411,7 @@ public final class JSONObfuscator extends Obfuscator {
             return f.apply(this);
         }
 
-        private StringMap<Obfuscator> obfuscators() {
+        private Map<String, Obfuscator> obfuscators() {
             return obfuscators.build();
         }
 
