@@ -125,13 +125,10 @@ public final class JSONObfuscator extends Obfuscator {
         obfuscateText(reader, contents, -1, writer);
     }
 
+    @SuppressWarnings("resource")
     private void obfuscateText(Reader input, CharSequence s, int end, JSONObfuscatorWriter writer) throws IOException {
-
-        try {
-            @SuppressWarnings("resource")
-            JsonParser jsonParser = JSON_PROVIDER.createParser(input);
-            @SuppressWarnings("resource")
-            JsonGenerator jsonGenerator = jsonGeneratorFactory.createGenerator(writer);
+        try (JsonParser jsonParser = JSON_PROVIDER.createParser(new DontCloseReader(input));
+            JsonGenerator jsonGenerator = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer))) {
 
             // depth > 0 means that an entire object or array needs to be obfuscated.
             int depth = 0;
@@ -256,6 +253,7 @@ public final class JSONObfuscator extends Obfuscator {
         return event == Event.START_ARRAY ? obfuscationMode.obfuscateArrays : obfuscationMode.obfuscateObjects;
     }
 
+    @SuppressWarnings("resource")
     private void obfuscateValue(String value, Obfuscator obfuscator, JsonGenerator jsonGenerator, JSONObfuscatorWriter writer, boolean quote)
             throws IOException {
 

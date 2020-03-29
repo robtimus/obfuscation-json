@@ -246,6 +246,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("write(int)")
+    @SuppressWarnings("resource")
     public void testWriteInt() throws IOException {
         try (Writer delegate = spy(new StringWriter());
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
@@ -263,6 +264,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("write(char[])")
+    @SuppressWarnings("resource")
     public void testWriteCharArray() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
@@ -276,6 +278,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("write(char[], int, int)")
+    @SuppressWarnings("resource")
     public void testWriteCharArrayPortion() throws IOException {
         try (Writer delegate = spy(new StringWriter());
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
@@ -305,6 +308,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("write(String)")
+    @SuppressWarnings("resource")
     public void testWriteString() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
@@ -317,6 +321,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("write(String, int, int)")
+    @SuppressWarnings("resource")
     public void testWriteStringPortion() throws IOException {
         try (Writer delegate = spy(new StringWriter());
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
@@ -340,6 +345,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("append(CharSequence)")
+    @SuppressWarnings("resource")
     public void testAppendCharSequence() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
