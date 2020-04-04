@@ -17,13 +17,13 @@
 
 package com.github.robtimus.obfuscation.json;
 
-import static com.github.robtimus.obfuscation.CaseSensitivity.CASE_SENSITIVE;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.checkStartAndEnd;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.copyTo;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.discardAll;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.map;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.reader;
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.writer;
+import static com.github.robtimus.obfuscation.support.CaseSensitivity.CASE_SENSITIVE;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.checkStartAndEnd;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.copyTo;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.discardAll;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.map;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.reader;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.writer;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -40,10 +40,10 @@ import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.robtimus.obfuscation.CachingObfuscatingWriter;
-import com.github.robtimus.obfuscation.CaseSensitivity;
 import com.github.robtimus.obfuscation.Obfuscator;
-import com.github.robtimus.obfuscation.ObfuscatorUtils.MapBuilder;
+import com.github.robtimus.obfuscation.support.CachingObfuscatingWriter;
+import com.github.robtimus.obfuscation.support.CaseSensitivity;
+import com.github.robtimus.obfuscation.support.ObfuscatorUtils.MapBuilder;
 
 /**
  * An obfuscator that obfuscates JSON properties in {@link CharSequence CharSequences} or the contents of {@link Reader Readers}.

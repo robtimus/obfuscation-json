@@ -17,7 +17,7 @@
 
 package com.github.robtimus.obfuscation.json;
 
-import static com.github.robtimus.obfuscation.ObfuscatorUtils.writer;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.writer;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Objects;
