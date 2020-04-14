@@ -20,6 +20,7 @@ package com.github.robtimus.obfuscation.json;
 import static com.github.robtimus.obfuscation.Obfuscator.fixedLength;
 import static com.github.robtimus.obfuscation.Obfuscator.none;
 import static com.github.robtimus.obfuscation.json.JSONObfuscator.builder;
+import static com.github.robtimus.obfuscation.support.CaseSensitivity.CASE_SENSITIVE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.never;
@@ -45,7 +46,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.Builder;
-import com.github.robtimus.obfuscation.json.JSONObfuscator.ObfuscationMode;
 
 @SuppressWarnings({ "javadoc", "nls" })
 @TestInstance(Lifecycle.PER_CLASS)
@@ -59,13 +59,18 @@ public class JSONObfuscatorTest {
     }
 
     Arguments[] testEquals() {
-        Obfuscator obfuscator = createObfuscator(true);
+        Obfuscator obfuscator = createObfuscator(builder().withProperty("test", none()));
         return new Arguments[] {
                 arguments(obfuscator, obfuscator, true),
                 arguments(obfuscator, null, false),
-                arguments(obfuscator, createObfuscator(true), true),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).withPrettyPrinting(true)), true),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none(), CASE_SENSITIVE)), true),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", fixedLength(3))), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).excludeObjects()), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).excludeArrays()), false),
                 arguments(obfuscator, builder().build(), false),
-                arguments(obfuscator, createObfuscator(false), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).withPrettyPrinting(false)), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).withMalformedJSONWarning(null)), false),
                 arguments(obfuscator, createObfuscator(true, false), false),
                 arguments(obfuscator, "foo", false),
         };
@@ -85,56 +90,97 @@ public class JSONObfuscatorTest {
     public class ValidJSON {
 
         @Nested
-        @DisplayName("ObfuscationMode.ALL")
+        @DisplayName("caseSensitiveByDefault()")
+        @TestInstance(Lifecycle.PER_CLASS)
+        public class ObfuscatingCaseSensitively extends ObfuscatorTest {
+
+            public ObfuscatingCaseSensitively() {
+                super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
+                        () -> createObfuscator(builder().caseSensitiveByDefault()));
+            }
+        }
+
+        @Nested
+        @DisplayName("caseInsensitiveByDefault()")
+        @TestInstance(Lifecycle.PER_CLASS)
+        public class ObfuscatingCaseInsensitively extends ObfuscatorTest {
+
+            public ObfuscatingCaseInsensitively() {
+                super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
+                        () -> createObfuscatorCaseInsensitive(builder().caseInsensitiveByDefault()));
+            }
+        }
+
+        @Nested
+        @DisplayName("obfuscating all (default)")
         public class ObfuscatingAll {
 
             @Nested
             @DisplayName("pretty printed")
-            public class PrettyPrinted extends ValidJSONTest {
+            public class PrettyPrinted extends ObfuscatorTest {
 
                 public PrettyPrinted() {
-                    super("JSONObfuscator.expected.valid.all.pretty-printed", ObfuscationMode.ALL, true);
+                    super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
+                            () -> createObfuscator(builder().withPrettyPrinting(true)));
                 }
             }
 
             @Nested
             @DisplayName("not pretty printed")
-            public class NotPrettyPrinted extends ValidJSONTest {
+            public class NotPrettyPrinted extends ObfuscatorTest {
 
                 public NotPrettyPrinted() {
-                    super("JSONObfuscator.expected.valid.all", ObfuscationMode.ALL, false);
+                    super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all",
+                            () -> createObfuscator(builder().withPrettyPrinting(false)));
                 }
             }
         }
 
         @Nested
-        @DisplayName("ObfuscationMode.SCALAR")
+        @DisplayName("obfuscating all, overriding scalars only by default")
+        @TestInstance(Lifecycle.PER_CLASS)
+        public class ObfuscatingAllOverridden extends ObfuscatorTest {
+
+            public ObfuscatingAllOverridden() {
+                super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
+                        () -> createObfuscatorObfuscatingAll(builder().scalarsOnlyByDefault()));
+            }
+        }
+
+        @Nested
+        @DisplayName("obfuscating scalars only by default")
         @TestInstance(Lifecycle.PER_CLASS)
         public class ObfuscatingScalars {
 
             @Nested
             @DisplayName("pretty printed")
-            public class PrettyPrinted extends ValidJSONTest {
+            public class PrettyPrinted extends ObfuscatorTest {
 
                 public PrettyPrinted() {
-                    super("JSONObfuscator.expected.valid.scalar.pretty-printed", ObfuscationMode.SCALAR, true);
+                    super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar.pretty-printed",
+                            () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(true)));
                 }
             }
 
             @Nested
             @DisplayName("not pretty printed")
-            public class NotPrettyPrinted extends ValidJSONTest {
+            public class NotPrettyPrinted extends ObfuscatorTest {
 
                 public NotPrettyPrinted() {
-                    super("JSONObfuscator.expected.valid.scalar", ObfuscationMode.SCALAR, false);
+                    super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar",
+                            () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(false)));
                 }
             }
         }
 
-        private class ValidJSONTest extends ObfuscatorTest {
+        @Nested
+        @DisplayName("obfuscating scalars only, overriding all by default")
+        @TestInstance(Lifecycle.PER_CLASS)
+        public class ObfuscatingScalarsOverridden extends ObfuscatorTest {
 
-            protected ValidJSONTest(String expectedResource, ObfuscationMode obfuscationMode, boolean prettyPrint) {
-                super("JSONObfuscator.input.valid.json", expectedResource, () -> createObfuscator(obfuscationMode, prettyPrint));
+            public ObfuscatingScalarsOverridden() {
+                super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar.pretty-printed",
+                        () -> createObfuscatorObfuscatingScalarsOnly(builder().allByDefault()));
             }
         }
     }
@@ -290,13 +336,6 @@ public class JSONObfuscatorTest {
         }
     }
 
-    private static Obfuscator createObfuscator(ObfuscationMode obfuscationMode, boolean prettyPrint) {
-        return builder()
-                .withObfuscationMode(obfuscationMode)
-                .withPrettyPrinting(prettyPrint)
-                .transform(JSONObfuscatorTest::createObfuscator);
-    }
-
     private static Obfuscator createObfuscator(boolean prettyPrint) {
         return builder()
                 .withPrettyPrinting(prettyPrint)
@@ -324,6 +363,51 @@ public class JSONObfuscatorTest {
                 .withProperty("array", obfuscator)
                 .withProperty("null", obfuscator)
                 .withProperty("notObfuscated", none())
+                .build();
+    }
+
+    private static Obfuscator createObfuscatorCaseInsensitive(Builder builder) {
+        Obfuscator obfuscator = fixedLength(3);
+        return builder
+                .withProperty("STRING", obfuscator)
+                .withProperty("INT", obfuscator)
+                .withProperty("FLOAT", obfuscator)
+                .withProperty("BOOLEANTRUE", obfuscator)
+                .withProperty("BOOLEANFALSE", obfuscator)
+                .withProperty("OBJECT", obfuscator)
+                .withProperty("ARRAY", obfuscator)
+                .withProperty("NULL", obfuscator)
+                .withProperty("NOTOBFUSCATED", none())
+                .build();
+    }
+
+    private static Obfuscator createObfuscatorObfuscatingAll(Builder builder) {
+        Obfuscator obfuscator = fixedLength(3);
+        return builder
+                .withProperty("string", obfuscator).all()
+                .withProperty("int", obfuscator).all()
+                .withProperty("float", obfuscator).all()
+                .withProperty("booleanTrue", obfuscator).all()
+                .withProperty("booleanFalse", obfuscator).all()
+                .withProperty("object", obfuscator).all()
+                .withProperty("array", obfuscator).all()
+                .withProperty("null", obfuscator).all()
+                .withProperty("notObfuscated", none()).all()
+                .build();
+    }
+
+    private static Obfuscator createObfuscatorObfuscatingScalarsOnly(Builder builder) {
+        Obfuscator obfuscator = fixedLength(3);
+        return builder
+                .withProperty("string", obfuscator).scalarsOnly()
+                .withProperty("int", obfuscator).scalarsOnly()
+                .withProperty("float", obfuscator).scalarsOnly()
+                .withProperty("booleanTrue", obfuscator).scalarsOnly()
+                .withProperty("booleanFalse", obfuscator).scalarsOnly()
+                .withProperty("object", obfuscator).scalarsOnly()
+                .withProperty("array", obfuscator).scalarsOnly()
+                .withProperty("null", obfuscator).scalarsOnly()
+                .withProperty("notObfuscated", none()).scalarsOnly()
                 .build();
     }
 
