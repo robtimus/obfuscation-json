@@ -102,7 +102,7 @@ public final class JSONObfuscator extends Obfuscator {
     @SuppressWarnings("resource")
     private void obfuscateText(Reader input, CharSequence s, int end, JSONObfuscatorWriter writer) throws IOException {
         try (JsonParser jsonParser = JSON_PROVIDER.createParser(new DontCloseReader(input));
-            JsonGenerator jsonGenerator = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer))) {
+                JsonGenerator jsonGenerator = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer))) {
 
             // depth > 0 means that an entire object or array needs to be obfuscated.
             int depth = 0;
@@ -161,9 +161,9 @@ public final class JSONObfuscator extends Obfuscator {
                         // Only this value needs to be obfuscated
                         obfuscateValue(jsonParser.getString(), propertyConfig.obfuscator, jsonGenerator, writer, true);
                         propertyConfig = null;
-                   } else {
+                    } else {
                         // Either not obfuscating, or nested in an object or array that will be obfuscated; write the value as-is.
-                       jsonGenerator.write(jsonParser.getString());
+                        jsonGenerator.write(jsonParser.getString());
                     }
                     break;
                 case VALUE_NULL:
