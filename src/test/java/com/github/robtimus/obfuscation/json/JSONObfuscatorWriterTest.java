@@ -33,16 +33,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import com.github.robtimus.obfuscation.Obfuscator;
 
-@SuppressWarnings({ "javadoc", "nls" })
-public class JSONObfuscatorWriterTest {
+@SuppressWarnings("nls")
+class JSONObfuscatorWriterTest {
 
     @Nested
     @DisplayName("endObfuscating()")
-    public class EndObfuscating {
+    class EndObfuscating {
 
         @Test
         @DisplayName("non-obfuscating")
-        public void testNonObfuscating() throws IOException {
+        void testNonObfuscating() throws IOException {
             try (Writer delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -55,7 +55,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("obfuscating")
-        public void testObfuscating() throws IOException {
+        void testObfuscating() throws IOException {
             try (Writer delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -70,11 +70,11 @@ public class JSONObfuscatorWriterTest {
 
     @Nested
     @DisplayName("assertNonObfuscating()")
-    public class AssertNonObfuscating {
+    class AssertNonObfuscating {
 
         @Test
         @DisplayName("non-obfuscating")
-        public void testNonObfuscating() throws IOException {
+        void testNonObfuscating() throws IOException {
             try (JSONObfuscatorWriter writer = new JSONObfuscatorWriter(new StringWriter())) {
                 writer.assertNonObfuscating();
             }
@@ -82,7 +82,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("obfuscating")
-        public void testObfuscating() throws IOException {
+        void testObfuscating() throws IOException {
             try (JSONObfuscatorWriter writer = new JSONObfuscatorWriter(new StringWriter())) {
                 writer.startObfuscate(Obfuscator.all());
                 assertThrows(AssertionError.class, () -> writer.assertNonObfuscating());
@@ -92,11 +92,11 @@ public class JSONObfuscatorWriterTest {
 
     @Nested
     @DisplayName("startObfuscate()")
-    public class Obfuscate {
+    class Obfuscate {
 
         @Test
         @DisplayName("non-obfuscating")
-        public void testNonObfuscating() throws IOException {
+        void testNonObfuscating() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -108,7 +108,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("obfuscating")
-        public void testObfuscating() throws IOException {
+        void testObfuscating() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -122,11 +122,11 @@ public class JSONObfuscatorWriterTest {
 
     @Nested
     @DisplayName("endObfuscate()")
-    public class EndObfuscate {
+    class EndObfuscate {
 
         @Test
         @DisplayName("non-obfuscating")
-        public void testNonObfuscating() throws IOException {
+        void testNonObfuscating() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -138,7 +138,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("obfuscating")
-        public void testObfuscating() throws IOException {
+        void testObfuscating() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -152,11 +152,11 @@ public class JSONObfuscatorWriterTest {
 
     @Nested
     @DisplayName("startUnquote()")
-    public class StartUnquote {
+    class StartUnquote {
 
         @Test
         @DisplayName("non-obfuscating")
-        public void testNonObfuscating() throws IOException {
+        void testNonObfuscating() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -168,7 +168,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("obfuscating")
-        public void testObfuscating() throws IOException {
+        void testObfuscating() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -182,11 +182,11 @@ public class JSONObfuscatorWriterTest {
 
     @Nested
     @DisplayName("endUnquote()")
-    public class EndUnquote {
+    class EndUnquote {
 
         @Test
         @DisplayName("non-quoting")
-        public void testNonQuoting() throws IOException {
+        void testNonQuoting() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -198,7 +198,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("quoting but non-quoted")
-        public void testQuotingNonQuoted() throws IOException {
+        void testQuotingNonQuoted() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -227,7 +227,7 @@ public class JSONObfuscatorWriterTest {
 
         @Test
         @DisplayName("quoting")
-        public void testQuoting() throws IOException {
+        void testQuoting() throws IOException {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -247,7 +247,7 @@ public class JSONObfuscatorWriterTest {
     @Test
     @DisplayName("write(int)")
     @SuppressWarnings("resource")
-    public void testWriteInt() throws IOException {
+    void testWriteInt() throws IOException {
         try (Writer delegate = spy(new StringWriter());
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -265,7 +265,7 @@ public class JSONObfuscatorWriterTest {
     @Test
     @DisplayName("write(char[])")
     @SuppressWarnings("resource")
-    public void testWriteCharArray() throws IOException {
+    void testWriteCharArray() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -279,7 +279,7 @@ public class JSONObfuscatorWriterTest {
     @Test
     @DisplayName("write(char[], int, int)")
     @SuppressWarnings("resource")
-    public void testWriteCharArrayPortion() throws IOException {
+    void testWriteCharArrayPortion() throws IOException {
         try (Writer delegate = spy(new StringWriter());
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -309,7 +309,7 @@ public class JSONObfuscatorWriterTest {
     @Test
     @DisplayName("write(String)")
     @SuppressWarnings("resource")
-    public void testWriteString() throws IOException {
+    void testWriteString() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -322,7 +322,7 @@ public class JSONObfuscatorWriterTest {
     @Test
     @DisplayName("write(String, int, int)")
     @SuppressWarnings("resource")
-    public void testWriteStringPortion() throws IOException {
+    void testWriteStringPortion() throws IOException {
         try (Writer delegate = spy(new StringWriter());
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -346,7 +346,7 @@ public class JSONObfuscatorWriterTest {
     @Test
     @DisplayName("append(CharSequence)")
     @SuppressWarnings("resource")
-    public void testAppendCharSequence() throws IOException {
+    void testAppendCharSequence() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -358,7 +358,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("append(CharSequence, int, int)")
-    public void testAppendCharSequencePortion() throws IOException {
+    void testAppendCharSequencePortion() throws IOException {
         try (Writer delegate = new StringWriter();
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -377,7 +377,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("append(char)")
-    public void testAppendChar() throws IOException {
+    void testAppendChar() throws IOException {
         try (Writer delegate = new StringWriter();
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -391,7 +391,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("flush()")
-    public void flush() throws IOException {
+    void flush() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 
@@ -402,7 +402,7 @@ public class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("close()")
-    public void testClose() throws IOException {
+    void testClose() throws IOException {
         try (Writer delegate = mock(Writer.class);
                 Writer writer = new JSONObfuscatorWriter(delegate)) {
 

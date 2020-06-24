@@ -47,14 +47,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.Builder;
 
-@SuppressWarnings({ "javadoc", "nls" })
+@SuppressWarnings("nls")
 @TestInstance(Lifecycle.PER_CLASS)
-public class JSONObfuscatorTest {
+class JSONObfuscatorTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource
     @DisplayName("equals(Object)")
-    public void testEquals(Obfuscator obfuscator, Object object, boolean expected) {
+    void testEquals(Obfuscator obfuscator, Object object, boolean expected) {
         assertEquals(expected, obfuscator.equals(object));
     }
 
@@ -78,7 +78,7 @@ public class JSONObfuscatorTest {
 
     @Test
     @DisplayName("hashCode()")
-    public void testHashCode() {
+    void testHashCode() {
         Obfuscator obfuscator = createObfuscator(true);
         assertEquals(obfuscator.hashCode(), obfuscator.hashCode());
         assertEquals(obfuscator.hashCode(), createObfuscator(true).hashCode());
@@ -87,14 +87,14 @@ public class JSONObfuscatorTest {
     @Nested
     @DisplayName("valid JSON")
     @TestInstance(Lifecycle.PER_CLASS)
-    public class ValidJSON {
+    class ValidJSON {
 
         @Nested
         @DisplayName("caseSensitiveByDefault()")
         @TestInstance(Lifecycle.PER_CLASS)
-        public class ObfuscatingCaseSensitively extends ObfuscatorTest {
+        class ObfuscatingCaseSensitively extends ObfuscatorTest {
 
-            public ObfuscatingCaseSensitively() {
+            ObfuscatingCaseSensitively() {
                 super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
                         () -> createObfuscator(builder().caseSensitiveByDefault()));
             }
@@ -103,9 +103,9 @@ public class JSONObfuscatorTest {
         @Nested
         @DisplayName("caseInsensitiveByDefault()")
         @TestInstance(Lifecycle.PER_CLASS)
-        public class ObfuscatingCaseInsensitively extends ObfuscatorTest {
+        class ObfuscatingCaseInsensitively extends ObfuscatorTest {
 
-            public ObfuscatingCaseInsensitively() {
+            ObfuscatingCaseInsensitively() {
                 super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
                         () -> createObfuscatorCaseInsensitive(builder().caseInsensitiveByDefault()));
             }
@@ -113,13 +113,13 @@ public class JSONObfuscatorTest {
 
         @Nested
         @DisplayName("obfuscating all (default)")
-        public class ObfuscatingAll {
+        class ObfuscatingAll {
 
             @Nested
             @DisplayName("pretty printed")
-            public class PrettyPrinted extends ObfuscatorTest {
+            class PrettyPrinted extends ObfuscatorTest {
 
-                public PrettyPrinted() {
+                PrettyPrinted() {
                     super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
                             () -> createObfuscator(builder().withPrettyPrinting(true)));
                 }
@@ -127,9 +127,9 @@ public class JSONObfuscatorTest {
 
             @Nested
             @DisplayName("not pretty printed")
-            public class NotPrettyPrinted extends ObfuscatorTest {
+            class NotPrettyPrinted extends ObfuscatorTest {
 
-                public NotPrettyPrinted() {
+                NotPrettyPrinted() {
                     super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all",
                             () -> createObfuscator(builder().withPrettyPrinting(false)));
                 }
@@ -139,9 +139,9 @@ public class JSONObfuscatorTest {
         @Nested
         @DisplayName("obfuscating all, overriding scalars only by default")
         @TestInstance(Lifecycle.PER_CLASS)
-        public class ObfuscatingAllOverridden extends ObfuscatorTest {
+        class ObfuscatingAllOverridden extends ObfuscatorTest {
 
-            public ObfuscatingAllOverridden() {
+            ObfuscatingAllOverridden() {
                 super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.all.pretty-printed",
                         () -> createObfuscatorObfuscatingAll(builder().scalarsOnlyByDefault()));
             }
@@ -150,13 +150,13 @@ public class JSONObfuscatorTest {
         @Nested
         @DisplayName("obfuscating scalars only by default")
         @TestInstance(Lifecycle.PER_CLASS)
-        public class ObfuscatingScalars {
+        class ObfuscatingScalars {
 
             @Nested
             @DisplayName("pretty printed")
-            public class PrettyPrinted extends ObfuscatorTest {
+            class PrettyPrinted extends ObfuscatorTest {
 
-                public PrettyPrinted() {
+                PrettyPrinted() {
                     super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar.pretty-printed",
                             () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(true)));
                 }
@@ -164,9 +164,9 @@ public class JSONObfuscatorTest {
 
             @Nested
             @DisplayName("not pretty printed")
-            public class NotPrettyPrinted extends ObfuscatorTest {
+            class NotPrettyPrinted extends ObfuscatorTest {
 
-                public NotPrettyPrinted() {
+                NotPrettyPrinted() {
                     super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar",
                             () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(false)));
                 }
@@ -176,9 +176,9 @@ public class JSONObfuscatorTest {
         @Nested
         @DisplayName("obfuscating scalars only, overriding all by default")
         @TestInstance(Lifecycle.PER_CLASS)
-        public class ObfuscatingScalarsOverridden extends ObfuscatorTest {
+        class ObfuscatingScalarsOverridden extends ObfuscatorTest {
 
-            public ObfuscatingScalarsOverridden() {
+            ObfuscatingScalarsOverridden() {
                 super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar.pretty-printed",
                         () -> createObfuscatorObfuscatingScalarsOnly(builder().allByDefault()));
             }
@@ -188,29 +188,29 @@ public class JSONObfuscatorTest {
     @Nested
     @DisplayName("invalid JSON")
     @TestInstance(Lifecycle.PER_CLASS)
-    public class InvalidJSON {
+    class InvalidJSON {
 
         @Nested
         @DisplayName("pretty printed")
-        public class PrettyPrinted extends InvalidJSONTest {
+        class PrettyPrinted extends InvalidJSONTest {
 
-            public PrettyPrinted() {
+            PrettyPrinted() {
                 super("JSONObfuscator.expected.invalid.pretty-printed", true);
             }
         }
 
         @Nested
         @DisplayName("not pretty printed")
-        public class NotPrettyPrinted extends InvalidJSONTest {
+        class NotPrettyPrinted extends InvalidJSONTest {
 
-            public NotPrettyPrinted() {
+            NotPrettyPrinted() {
                 super("JSONObfuscator.expected.invalid", false);
             }
         }
 
         private class InvalidJSONTest extends ObfuscatorTest {
 
-            protected InvalidJSONTest(String expectedResource, boolean prettyPrint) {
+            InvalidJSONTest(String expectedResource, boolean prettyPrint) {
                 super("JSONObfuscator.input.invalid", expectedResource, () -> createObfuscator(prettyPrint));
             }
         }
@@ -219,59 +219,59 @@ public class JSONObfuscatorTest {
     @Nested
     @DisplayName("truncated JSON")
     @TestInstance(Lifecycle.PER_CLASS)
-    public class TruncatedJSON {
+    class TruncatedJSON {
 
         @Nested
         @DisplayName("pretty printed with warning")
-        public class PrettyPrintedWithWarning extends TruncatedJSONTest {
+        class PrettyPrintedWithWarning extends TruncatedJSONTest {
 
-            public PrettyPrintedWithWarning() {
+            PrettyPrintedWithWarning() {
                 super("JSONObfuscator.expected.truncated.pretty-printed", true, true);
             }
         }
 
         @Nested
         @DisplayName("pretty printed without warning")
-        public class PrettyPrintedWithoutWarning extends TruncatedJSONTest {
+        class PrettyPrintedWithoutWarning extends TruncatedJSONTest {
 
-            public PrettyPrintedWithoutWarning() {
+            PrettyPrintedWithoutWarning() {
                 super("JSONObfuscator.expected.truncated.no-warning.pretty-printed", true, false);
             }
         }
 
         @Nested
         @DisplayName("not pretty printed with warning")
-        public class NotPrettyPrintedWithWarning extends TruncatedJSONTest {
+        class NotPrettyPrintedWithWarning extends TruncatedJSONTest {
 
-            public NotPrettyPrintedWithWarning() {
+            NotPrettyPrintedWithWarning() {
                 super("JSONObfuscator.expected.truncated", false, true);
             }
         }
 
         @Nested
         @DisplayName("not pretty printed without warning")
-        public class NotPrettyPrintedWithoutWarning extends TruncatedJSONTest {
+        class NotPrettyPrintedWithoutWarning extends TruncatedJSONTest {
 
-            public NotPrettyPrintedWithoutWarning() {
+            NotPrettyPrintedWithoutWarning() {
                 super("JSONObfuscator.expected.truncated.no-warning", false, false);
             }
         }
 
         private class TruncatedJSONTest extends ObfuscatorTest {
 
-            protected TruncatedJSONTest(String expectedResource, boolean prettyPrint, boolean includeWarning) {
+            TruncatedJSONTest(String expectedResource, boolean prettyPrint, boolean includeWarning) {
                 super("JSONObfuscator.input.truncated", expectedResource, () -> createObfuscator(prettyPrint, includeWarning));
             }
         }
     }
 
-    private static class ObfuscatorTest {
+    static class ObfuscatorTest {
 
         private final String input;
         private final String expected;
         private final Supplier<Obfuscator> obfuscatorSupplier;
 
-        protected ObfuscatorTest(String inputResource, String expectedResource, Supplier<Obfuscator> obfuscatorSupplier) {
+        ObfuscatorTest(String inputResource, String expectedResource, Supplier<Obfuscator> obfuscatorSupplier) {
             this.input = readResource(inputResource);
             this.expected = readResource(expectedResource);
             this.obfuscatorSupplier = obfuscatorSupplier;
@@ -279,7 +279,7 @@ public class JSONObfuscatorTest {
 
         @Test
         @DisplayName("obfuscateText(CharSequence, int, int)")
-        public void testObfuscateTextCharSequence() {
+        void testObfuscateTextCharSequence() {
             Obfuscator obfuscator = obfuscatorSupplier.get();
 
             assertEquals(expected, obfuscator.obfuscateText("x" + input + "x", 1, 1 + input.length()).toString());
@@ -287,7 +287,7 @@ public class JSONObfuscatorTest {
 
         @Test
         @DisplayName("obfuscateText(CharSequence, int, int, Appendable)")
-        public void testObfuscateTextCharSequenceToAppendable() throws IOException {
+        void testObfuscateTextCharSequenceToAppendable() throws IOException {
             Obfuscator obfuscator = obfuscatorSupplier.get();
 
             StringWriter destination = spy(new StringWriter());
@@ -299,7 +299,7 @@ public class JSONObfuscatorTest {
         @Test
         @DisplayName("obfuscateText(Reader, Appendable)")
         @SuppressWarnings("resource")
-        public void testObfuscateTextReaderToAppendable() throws IOException {
+        void testObfuscateTextReaderToAppendable() throws IOException {
             Obfuscator obfuscator = obfuscatorSupplier.get();
 
             StringWriter destination = spy(new StringWriter());
@@ -319,7 +319,7 @@ public class JSONObfuscatorTest {
 
         @Test
         @DisplayName("streamTo(Appendable")
-        public void testStreamTo() throws IOException {
+        void testStreamTo() throws IOException {
             Obfuscator obfuscator = obfuscatorSupplier.get();
 
             Writer writer = spy(new StringWriter());

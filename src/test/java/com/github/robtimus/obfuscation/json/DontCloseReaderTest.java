@@ -33,14 +33,14 @@ import java.nio.CharBuffer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings({ "javadoc", "nls" })
-public class DontCloseReaderTest {
+@SuppressWarnings("nls")
+class DontCloseReaderTest {
 
     private static final String SOURCE = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa.";
 
     @Test
     @DisplayName("read(CharBuffer)")
-    public void testReadCharBuffer() throws IOException {
+    void testReadCharBuffer() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
         StringBuilder output = new StringBuilder(SOURCE.length());
 
@@ -58,7 +58,7 @@ public class DontCloseReaderTest {
 
     @Test
     @DisplayName("read()")
-    public void testReadChar() throws IOException {
+    void testReadChar() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
         StringBuilder output = new StringBuilder(SOURCE.length());
 
@@ -75,7 +75,7 @@ public class DontCloseReaderTest {
 
     @Test
     @DisplayName("read(char[])")
-    public void testReadCharArray() throws IOException {
+    void testReadCharArray() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
         StringBuilder output = new StringBuilder(SOURCE.length());
 
@@ -93,7 +93,7 @@ public class DontCloseReaderTest {
 
     @Test
     @DisplayName("read(char[], int, int)")
-    public void testReadByteArrayRange() throws IOException {
+    void testReadByteArrayRange() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
         StringBuilder output = new StringBuilder(SOURCE.length());
 
@@ -112,7 +112,7 @@ public class DontCloseReaderTest {
 
     @Test
     @DisplayName("skip(long)")
-    public void testSkip() throws IOException {
+    void testSkip() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
 
         try (Reader wrapped = new DontCloseReader(input)) {
@@ -125,7 +125,7 @@ public class DontCloseReaderTest {
 
     @Test
     @DisplayName("ready()")
-    public void testReady() throws IOException {
+    void testReady() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
 
         try (Reader wrapped = new DontCloseReader(input)) {
@@ -137,7 +137,7 @@ public class DontCloseReaderTest {
 
     @Test
     @DisplayName("mark(int) and reset")
-    public void testMarkAndReset() throws IOException {
+    void testMarkAndReset() throws IOException {
         StringReader input = spy(new StringReader(SOURCE));
         StringBuilder output = new StringBuilder(SOURCE.length());
 
