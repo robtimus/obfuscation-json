@@ -34,6 +34,8 @@ final class JSONObfuscatorWriter extends Writer {
 
     private boolean trimWhitespace = true;
 
+    private boolean flush = true;
+
     JSONObfuscatorWriter(Writer delegate) {
         original = Objects.requireNonNull(delegate);
 
@@ -78,7 +80,7 @@ final class JSONObfuscatorWriter extends Writer {
      * Purpose: remove the start and end quotes of written JSON strings.
      */
     void startUnquote() {
-        assert original == delegate : "Can ony unquote the original writer"; //$NON-NLS-1$
+        assert original == delegate : "Can only unquote the original writer"; //$NON-NLS-1$
         delegate = unquotingWriter;
     }
 
@@ -92,6 +94,14 @@ final class JSONObfuscatorWriter extends Writer {
         original.append(unquoting, 1, unquoting.length() - 1);
         unquoting.delete(0, unquoting.length());
         delegate = original;
+    }
+
+    void preventFlush() {
+        flush = false;
+    }
+
+    void allowFlush() {
+        flush = true;
     }
 
     @Override
@@ -172,7 +182,9 @@ final class JSONObfuscatorWriter extends Writer {
 
     @Override
     public void flush() throws IOException {
-        // don't delegate, to prevent too many flushes to underlying writers
+        if (flush) {
+            delegate.flush();
+        }
     }
 
     @Override

@@ -102,110 +102,47 @@ public final class JSONObfuscator extends Obfuscator {
     @SuppressWarnings("resource")
     private void obfuscateText(Reader input, CharSequence s, int end, JSONObfuscatorWriter writer) throws IOException {
         try (JsonParser jsonParser = JSON_PROVIDER.createParser(new DontCloseReader(input));
-                JsonGenerator jsonGenerator = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer))) {
+                JsonGenerator jsonGenerator = createJsonGenerator(writer)) {
 
-            // depth > 0 means that an entire object or array needs to be obfuscated.
-            int depth = 0;
-            // propertyConfig != null means the current value needs be obfuscated.
-            PropertyConfig propertyConfig = null;
-            Event event = null;
-
-            // The below will flush the jsonGenerator after each write, so writes are done to the correct writer at the time
             while (jsonParser.hasNext()) {
-                event = jsonParser.next();
+                Event event = jsonParser.next();
                 switch (event) {
                 case START_OBJECT:
-                case START_ARRAY:
-                    if (propertyConfig != null && depth == 0 && !obfuscateNonScalarValue(event, propertyConfig)) {
-                        // there is an obfuscator for the object or array property, but the obfuscation mode prohibits obfuscating objects / arrays;
-                        // reset the obfuscator so this property will not be obfuscated
-                        propertyConfig = null;
-                    }
-                    if (propertyConfig != null) {
-                        if (depth == 0) {
-                            // The start of obfuscating an object or array; the object or array should be obfuscated completely
-                            writer.startObfuscate(propertyConfig.obfuscator);
-                        }
-                        depth++;
-                    }
-                    if (event == Event.START_OBJECT) {
-                        jsonGenerator.writeStartObject();
-                    } else {
-                        jsonGenerator.writeStartArray();
-                    }
-                    jsonGenerator.flush();
+                    jsonGenerator.writeStartObject();
                     break;
                 case END_OBJECT:
+                    jsonGenerator.writeEnd();
+                    break;
+                case START_ARRAY:
+                    jsonGenerator.writeStartArray();
+                    break;
                 case END_ARRAY:
                     jsonGenerator.writeEnd();
-                    jsonGenerator.flush();
-                    if (depth > 0) {
-                        depth--;
-                        if (depth == 0) {
-                            // The end of obfuscating an object or array; the delegate is the obfuscator's stream, so close it to finish obfuscation
-                            writer.endObfuscate();
-                            propertyConfig = null;
-                        }
-                    }
                     break;
                 case KEY_NAME:
-                    String propertyName = jsonParser.getString();
-                    if (propertyConfig == null) {
-                        propertyConfig = properties.get(propertyName);
-                    }
-                    jsonGenerator.writeKey(propertyName);
-                    jsonGenerator.flush();
+                    jsonGenerator.writeKey(jsonParser.getString());
                     break;
                 case VALUE_STRING:
-                    if (propertyConfig != null && depth == 0) {
-                        // Only this value needs to be obfuscated
-                        obfuscateValue(jsonParser.getString(), propertyConfig.obfuscator, jsonGenerator, writer, true);
-                        propertyConfig = null;
-                    } else {
-                        // Either not obfuscating, or nested in an object or array that will be obfuscated; write the value as-is.
-                        jsonGenerator.write(jsonParser.getString());
-                    }
-                    break;
-                case VALUE_NULL:
-                    if (propertyConfig != null && depth == 0) {
-                        // Only this value needs to be obfuscated
-                        obfuscateValue("null", propertyConfig.obfuscator, jsonGenerator, writer, false); //$NON-NLS-1$
-                        propertyConfig = null;
-                    } else {
-                        // Either not obfuscating, or nested in an object or array that will be obfuscated
-                        jsonGenerator.writeNull();
-                    }
+                    jsonGenerator.write(jsonParser.getString());
                     break;
                 case VALUE_NUMBER:
-                    if (propertyConfig != null && depth == 0) {
-                        // Only this value needs to be obfuscated
-                        obfuscateValue(jsonParser.getString(), propertyConfig.obfuscator, jsonGenerator, writer, false);
-                        propertyConfig = null;
-                    } else {
-                        // Either not obfuscating, or nested in an object or array that will be obfuscated
-                        if (jsonParser.isIntegralNumber()) {
-                            jsonGenerator.write(jsonParser.getLong());
-                        } else {
-                            jsonGenerator.write(jsonParser.getBigDecimal());
-                        }
-                    }
+                    jsonGenerator.write(jsonParser.getValue());
                     break;
                 case VALUE_TRUE:
+                    jsonGenerator.write(true);
+                    break;
                 case VALUE_FALSE:
-                    if (propertyConfig != null && depth == 0) {
-                        // Only this value needs to be obfuscated
-                        obfuscateValue(Boolean.toString(event == Event.VALUE_TRUE), propertyConfig.obfuscator, jsonGenerator, writer, false);
-                        propertyConfig = null;
-                    } else {
-                        // Either not obfuscating, or nested in an object or array that will be obfuscated
-                        jsonGenerator.write(event == Event.VALUE_TRUE);
-                    }
+                    jsonGenerator.write(false);
+                    break;
+                case VALUE_NULL:
+                    jsonGenerator.writeNull();
                     break;
                 default:
                     LOGGER.warn(Messages.JSONObfuscator.unexpectedEvent.get(event));
                     break;
                 }
             }
+
             // Read the remainder so the final append will include all text
             discardAll(input);
             writer.assertNonObfuscating();
@@ -222,24 +159,9 @@ public final class JSONObfuscator extends Obfuscator {
         }
     }
 
-    private boolean obfuscateNonScalarValue(Event event, PropertyConfig propertyConfig) {
-        assert event == Event.START_ARRAY || event == Event.START_OBJECT : "Should only be called for array or object start"; //$NON-NLS-1$
-        return event == Event.START_ARRAY ? propertyConfig.obfuscateArrays : propertyConfig.obfuscateObjects;
-    }
-
     @SuppressWarnings("resource")
-    private void obfuscateValue(String value, Obfuscator obfuscator, JsonGenerator jsonGenerator, JSONObfuscatorWriter writer, boolean quote)
-            throws IOException {
-
-        if (quote) {
-            jsonGenerator.write(obfuscator.obfuscateText(value).toString());
-            jsonGenerator.flush();
-        } else {
-            writer.startUnquote();
-            jsonGenerator.write(obfuscator.obfuscateText(value).toString());
-            jsonGenerator.flush();
-            writer.endUnquote();
-        }
+    JsonGenerator createJsonGenerator(JSONObfuscatorWriter writer) {
+        return new ObfuscatingJsonGenerator(jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer)), writer, properties);
     }
 
     @Override
@@ -661,42 +583,6 @@ public final class JSONObfuscator extends Obfuscator {
             addLastProperty();
 
             return new JSONObfuscator(this);
-        }
-    }
-
-    private static final class PropertyConfig {
-
-        private final Obfuscator obfuscator;
-        private final boolean obfuscateObjects;
-        private final boolean obfuscateArrays;
-
-        private PropertyConfig(Obfuscator obfuscator, boolean obfuscateObjects, boolean obfuscateArrays) {
-            this.obfuscator = Objects.requireNonNull(obfuscator);
-            this.obfuscateObjects = obfuscateObjects;
-            this.obfuscateArrays = obfuscateArrays;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            // null and different types should not occur
-            PropertyConfig other = (PropertyConfig) o;
-            return obfuscator.equals(other.obfuscator)
-                    && obfuscateObjects == other.obfuscateObjects
-                    && obfuscateArrays == other.obfuscateArrays;
-        }
-
-        @Override
-        public int hashCode() {
-            return obfuscator.hashCode() ^ Boolean.hashCode(obfuscateObjects) ^ Boolean.hashCode(obfuscateArrays);
-        }
-
-        @Override
-        @SuppressWarnings("nls")
-        public String toString() {
-            return "[obfuscator=" + obfuscator
-                    + ",obfuscateObjects=" + obfuscateObjects
-                    + ",obfuscateArrays=" + obfuscateArrays
-                    + "]";
         }
     }
 }

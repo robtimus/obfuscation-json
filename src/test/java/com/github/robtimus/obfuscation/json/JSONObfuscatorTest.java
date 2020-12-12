@@ -265,7 +265,7 @@ class JSONObfuscatorTest {
         }
     }
 
-    static class ObfuscatorTest {
+    abstract static class ObfuscatorTest {
 
         private final String input;
         private final String expected;
@@ -351,7 +351,7 @@ class JSONObfuscatorTest {
         return builder.transform(JSONObfuscatorTest::createObfuscator);
     }
 
-    private static Obfuscator createObfuscator(Builder builder) {
+    static JSONObfuscator createObfuscator(Builder builder) {
         Obfuscator obfuscator = fixedLength(3);
         return builder
                 .withProperty("string", obfuscator)
@@ -411,7 +411,7 @@ class JSONObfuscatorTest {
                 .build();
     }
 
-    private static String readResource(String name) {
+    static String readResource(String name) {
         StringBuilder sb = new StringBuilder();
         try (Reader input = new InputStreamReader(JSONObfuscatorTest.class.getResourceAsStream(name), StandardCharsets.UTF_8)) {
             char[] buffer = new char[4096];

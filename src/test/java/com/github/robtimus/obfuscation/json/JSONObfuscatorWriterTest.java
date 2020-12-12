@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -391,11 +392,18 @@ class JSONObfuscatorWriterTest {
 
     @Test
     @DisplayName("flush()")
+    @SuppressWarnings("resource")
     void flush() throws IOException {
         try (Writer delegate = mock(Writer.class);
-                Writer writer = new JSONObfuscatorWriter(delegate)) {
+                JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
+
+            writer.preventFlush();
+            writer.flush();
+            writer.allowFlush();
+            verifyNoInteractions(delegate);
 
             writer.flush();
+            verify(delegate).flush();
             verifyNoMoreInteractions(delegate);
         }
     }
