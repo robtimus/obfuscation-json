@@ -72,6 +72,7 @@ final class JSONObfuscatorWriter extends Writer {
      */
     void endObfuscate() throws IOException {
         assert original != delegate && unquotingWriter != delegate : "Can only restore original if obfuscating"; //$NON-NLS-1$
+        // delegate is the result of obfuscator.streamTo(original); close it to finish obfuscation
         delegate.close();
         delegate = original;
     }

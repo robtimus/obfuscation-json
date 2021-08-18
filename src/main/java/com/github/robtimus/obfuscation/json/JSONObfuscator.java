@@ -59,6 +59,7 @@ public final class JSONObfuscator extends Obfuscator {
     private final JsonGeneratorFactory jsonGeneratorFactory;
 
     private final boolean prettyPrint;
+    private final boolean obfuscateToString;
     private final String malformedJSONWarning;
 
     private JSONObfuscator(ObfuscatorBuilder builder) {
@@ -68,6 +69,7 @@ public final class JSONObfuscator extends Obfuscator {
         Map<String, ?> config = prettyPrint ? Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true) : Collections.emptyMap();
         jsonGeneratorFactory = JSON_PROVIDER.createGeneratorFactory(config);
 
+        obfuscateToString = builder.obfuscateToString;
         malformedJSONWarning = builder.malformedJSONWarning;
     }
 
@@ -159,9 +161,8 @@ public final class JSONObfuscator extends Obfuscator {
         }
     }
 
-    @SuppressWarnings("resource")
     JsonGenerator createJsonGenerator(JSONObfuscatorWriter writer) {
-        return new ObfuscatingJsonGenerator(jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer)), writer, properties);
+        return new ObfuscatingJsonGenerator(jsonGeneratorFactory, writer, properties, obfuscateToString);
     }
 
     @Override
@@ -180,12 +181,14 @@ public final class JSONObfuscator extends Obfuscator {
         JSONObfuscator other = (JSONObfuscator) o;
         return properties.equals(other.properties)
                 && prettyPrint == other.prettyPrint
+                && obfuscateToString == other.obfuscateToString
                 && Objects.equals(malformedJSONWarning, other.malformedJSONWarning);
     }
 
     @Override
     public int hashCode() {
-        return properties.hashCode() ^ Boolean.hashCode(prettyPrint) ^ Objects.hashCode(malformedJSONWarning);
+        return properties.hashCode() ^ Boolean.hashCode(prettyPrint) ^ Boolean.hashCode(obfuscateToString)
+                ^ Objects.hashCode(malformedJSONWarning);
     }
 
     @Override
@@ -194,6 +197,7 @@ public final class JSONObfuscator extends Obfuscator {
         return getClass().getName()
                 + "[properties=" + properties
                 + ",prettyPrint=" + prettyPrint
+                + ",obfuscateToString=" + obfuscateToString
                 + ",malformedJSONWarning=" + malformedJSONWarning
                 + "]";
     }
@@ -336,6 +340,18 @@ public final class JSONObfuscator extends Obfuscator {
         public abstract Builder withPrettyPrinting(boolean prettyPrint);
 
         /**
+         * If called, obfuscated values will be converted to strings. This will cause the obfuscated results to be valid JSON, assuming the input was
+         * valid JSON. For values that were already strings this changes nothing.
+         * <p>
+         * An exception is made for {@link Obfuscator#none()}. This still allows skipping obfuscating values inside certain properties.
+         * <p>
+         * Note that if obfuscated objects or arrays are converted to strings, any line breaks will be escaped.
+         *
+         * @return This object.
+         */
+        public abstract Builder obfuscateToString();
+
+        /**
          * Sets the warning to include if a {@link JsonParsingException} is thrown.
          * This can be used to override the default message. Use {@code null} to omit the warning.
          *
@@ -432,6 +448,7 @@ public final class JSONObfuscator extends Obfuscator {
         private final MapBuilder<PropertyConfig> properties;
 
         private boolean prettyPrint;
+        private boolean obfuscateToString;
 
         private String malformedJSONWarning;
 
@@ -449,6 +466,7 @@ public final class JSONObfuscator extends Obfuscator {
         private ObfuscatorBuilder() {
             properties = new MapBuilder<>();
             prettyPrint = true;
+            obfuscateToString = false;
             malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
 
             obfuscateObjectsByDefault = true;
@@ -548,6 +566,12 @@ public final class JSONObfuscator extends Obfuscator {
         @Override
         public Builder withPrettyPrinting(boolean prettyPrint) {
             this.prettyPrint = prettyPrint;
+            return this;
+        }
+
+        @Override
+        public Builder obfuscateToString() {
+            obfuscateToString = true;
             return this;
         }
 
