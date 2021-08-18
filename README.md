@@ -30,6 +30,44 @@ JSON obfuscators perform obfuscating by generating new, obfuscated JSON document
 
 If the structure of the original JSON document needs to be kept intact, you should use [obfuscation-jackson](https://robtimus.github.io/obfuscation-jackson/) instead.
 
+## Producing valid JSON
+
+If string values are obfuscated, the obfuscated value remains quoted. For other values, the obfuscated values are not quoted. This could lead to invalid JSON:
+
+    {
+      "boolean": ***
+    }
+
+For most use cases this is not an issue. If the obfuscated JSON needs to be valid, this can be achieved by converting obfuscated values to strings:
+
+    Obfuscator obfuscator = JSONObfuscator.builder()
+            .withProperty("boolean", Obfuscator.fixedLength(3))
+            .obfuscateToString()
+            .build();
+
+This will turn the above result into this:
+
+    {
+        "boolean": "***"
+    }
+
+An exception is made for [Obfuscator.none()](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#none--). Since this obfuscator does not actually obfuscate anything, any property that is configured to use it will be added as-is. This still allows skipping obfuscating values inside certain properties:
+
+    Obfuscator obfuscator = JSONObfuscator.builder()
+            .withProperty("object", Obfuscator.none())
+            .withProperty("boolean", Obfuscator.fixedLength(3))
+            .obfuscateToString()
+            .build();
+
+Possible output:
+
+    {
+        "boolean": "***",
+        "object": {
+            "boolean": true
+        }
+    }
+
 ## Handling malformed JSON
 
 If malformed JSON is encountered, obfuscation aborts. It will add a message to the result indicating that obfuscation was aborted. This message can be changed or turned off when creating JSON obfuscators:

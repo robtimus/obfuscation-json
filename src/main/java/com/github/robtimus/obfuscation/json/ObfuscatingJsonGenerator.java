@@ -31,7 +31,6 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
-import com.github.robtimus.obfuscation.Obfuscator;
 
 class ObfuscatingJsonGenerator implements JsonGenerator {
 
@@ -270,7 +269,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     }
 
     private void doWriteStart() {
-        if (!currentProperty.obfuscator.equals(Obfuscator.none())) {
+        if (currentProperty.isObfuscating()) {
             if (obfuscateToString) {
                 // A new delegate is needed to be able to start a new object or array
                 delegate = jsonGeneratorFactory.createGenerator(capturedWriter);
@@ -281,8 +280,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     }
 
     private void doWriteEnd() {
-        // If the obfuscator is none(), no obfuscation was started, so there's nothing to end
-        if (!currentProperty.obfuscator.equals(Obfuscator.none())) {
+        if (currentProperty.isObfuscating()) {
             if (obfuscateToString) {
                 // The delegate is a new generator around the writer around captured; close it and write the captured content as a string
                 assert delegate != originalDelegate : "delegate must be a capturing generator"; //$NON-NLS-1$
@@ -373,7 +371,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(String value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeString(value);
 
             currentProperty = null;
@@ -388,7 +386,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(BigDecimal value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString(value.toString());
 
             currentProperty = null;
@@ -403,7 +401,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(BigInteger value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString(value.toString());
 
             currentProperty = null;
@@ -418,7 +416,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(int value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString(Integer.toString(value));
 
             currentProperty = null;
@@ -433,7 +431,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(long value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString(Long.toString(value));
 
             currentProperty = null;
@@ -448,7 +446,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(double value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString(Double.toString(value));
 
             currentProperty = null;
@@ -463,7 +461,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator write(boolean value) {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString(Boolean.toString(value));
 
             currentProperty = null;
@@ -478,7 +476,7 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator writeNull() {
-        if (currentProperty != null && depth == 0) {
+        if (shouldObfuscateCurrentProperty()) {
             writeNonString("null"); //$NON-NLS-1$
 
             currentProperty = null;
@@ -488,6 +486,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
         }
 
         return this;
+    }
+
+    private boolean shouldObfuscateCurrentProperty() {
+        return currentProperty != null && currentProperty.isObfuscating() && depth == 0;
     }
 
     private void writeString(CharSequence value) {

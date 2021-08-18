@@ -32,6 +32,10 @@ final class PropertyConfig {
         this.obfuscateArrays = obfuscateArrays;
     }
 
+    boolean isObfuscating() {
+        return !obfuscator.equals(Obfuscator.none());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
