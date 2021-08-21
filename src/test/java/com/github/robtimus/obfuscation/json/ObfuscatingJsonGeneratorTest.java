@@ -17,6 +17,8 @@
 
 package com.github.robtimus.obfuscation.json;
 
+import static com.github.robtimus.obfuscation.Obfuscator.fixedLength;
+import static com.github.robtimus.obfuscation.Obfuscator.none;
 import static com.github.robtimus.obfuscation.json.JSONObfuscatorTest.createObfuscator;
 import static com.github.robtimus.obfuscation.json.JSONObfuscatorTest.readResource;
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.writer;
@@ -31,461 +33,492 @@ import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import com.github.robtimus.obfuscation.Obfuscator;
 
 @SuppressWarnings("nls")
 class ObfuscatingJsonGeneratorTest {
 
-    @Test
-    @DisplayName("using int and double")
-    @SuppressWarnings("resource")
-    void testUsingIntAndDouble() {
-        StringBuilder destination = new StringBuilder();
-        try (JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
+    @Nested
+    @DisplayName("obfuscating all")
+    class ObfuscatingAll extends GeneratorTest {
 
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-
-            jsonGenerator.writeStartObject("nonMatchedObject");
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // "nonMatchedObject" object
-
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-
-            jsonGenerator.writeStartObject("notObfuscated");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // "notObfuscated" object
-            jsonGenerator.writeEnd(); // root object
-
-            jsonGenerator.flush();
+        ObfuscatingAll() {
+            super(fixedLength(3), "JSONObfuscator.expected.valid.all.pretty-printed");
         }
-        assertObfuscated(destination.toString());
     }
 
-    @Test
-    @DisplayName("using long and double")
-    @SuppressWarnings("resource")
-    void testUsingLongAndDouble() {
-        StringBuilder destination = new StringBuilder();
-        try (JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456L);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
+    @Nested
+    @DisplayName("obfuscating none")
+    class ObfuscatingNone extends GeneratorTest {
 
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456L);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456L);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-
-            jsonGenerator.writeStartObject("nonMatchedObject");
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456L);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // "nonMatchedObject" object
-
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456L);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456L);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456L);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-
-            jsonGenerator.writeStartObject("notObfuscated");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456L);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", 123456L);
-            jsonGenerator.write("float", 1234.56);
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", 123456L);
-            jsonGenerator.write("notMatchedFloat", 1234.56);
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // "notObfuscated" object
-            jsonGenerator.writeEnd(); // root object
-
-            jsonGenerator.flush();
+        ObfuscatingNone() {
+            super(none(), "JSONObfuscator.expected.valid.obfuscating-none.pretty-printed");
         }
-        assertObfuscated(destination.toString());
     }
 
-    @Test
-    @DisplayName("using BigInteger and BigDecimal")
-    @SuppressWarnings("resource")
-    void testUsingBigIntegerAndBigDecimal() {
-        StringBuilder destination = new StringBuilder();
-        try (JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", BigInteger.valueOf(123456));
-            jsonGenerator.write("float", new BigDecimal("1234.56"));
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
+    abstract static class GeneratorTest {
 
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", BigInteger.valueOf(123456));
-            jsonGenerator.write("float", new BigDecimal("1234.56"));
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
+        private final Obfuscator propertyObfuscator;
+        private final String expectedResource;
 
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
-            jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-
-            jsonGenerator.writeStartObject("nonMatchedObject");
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
-            jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // "nonMatchedObject" object
-
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", BigInteger.valueOf(123456));
-            jsonGenerator.write("float", new BigDecimal("1234.56"));
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", BigInteger.valueOf(123456));
-            jsonGenerator.write("float", new BigDecimal("1234.56"));
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
-            jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-
-            jsonGenerator.writeStartObject("notObfuscated");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", BigInteger.valueOf(123456));
-            jsonGenerator.write("float", new BigDecimal("1234.56"));
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeNull("null");
-
-            jsonGenerator.writeStartObject("object");
-            jsonGenerator.write("string", "string\"int");
-            jsonGenerator.write("int", BigInteger.valueOf(123456));
-            jsonGenerator.write("float", new BigDecimal("1234.56"));
-            jsonGenerator.write("booleanTrue", true);
-            jsonGenerator.write("booleanFalse", false);
-            jsonGenerator.writeStartArray("nested");
-            jsonGenerator.writeStartObject();
-            jsonGenerator.write("prop1", "1");
-            jsonGenerator.write("prop2", "2");
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "nested" array
-            jsonGenerator.writeEnd(); // "object" object
-
-            jsonGenerator.writeStartArray("array");
-            jsonGenerator.writeStartArray();
-            jsonGenerator.write("1");
-            jsonGenerator.write("2");
-            jsonGenerator.writeEnd(); // anonymous array
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeEnd(); // anonymous object
-            jsonGenerator.writeEnd(); // "array" array
-
-            jsonGenerator.write("notMatchedString", "123456");
-            jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
-            jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
-            jsonGenerator.write("notMatchedBooleanTrue", true);
-            jsonGenerator.write("notMatchedBooleanFalse", false);
-            jsonGenerator.writeNull("nonMatchedNull");
-            jsonGenerator.writeEnd(); // "notObfuscated" object
-            jsonGenerator.writeEnd(); // root object
-
-            jsonGenerator.flush();
+        GeneratorTest(Obfuscator propertyObfuscator, String expectedResource) {
+            this.propertyObfuscator = propertyObfuscator;
+            this.expectedResource = expectedResource;
         }
-        assertObfuscated(destination.toString());
-    }
 
-    @Test
-    @DisplayName("using JsonValue")
-    @SuppressWarnings("resource")
-    void testUsingJsonValue() {
-        String input = readResource("JSONObfuscator.input.valid.json");
+        @Test
+        @DisplayName("using int and double")
+        @SuppressWarnings("resource")
+        void testUsingIntAndDouble() {
+            StringBuilder destination = new StringBuilder();
+            try (JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
 
-        StringBuilder destination = new StringBuilder();
-        try (JsonParser jsonParser = Json.createParser(new StringReader(input));
-                JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
 
-            assertTrue(jsonParser.hasNext());
-            assertEquals(Event.START_OBJECT, jsonParser.next());
-            JsonObject jsonObject = jsonParser.getObject();
-            // This will recursively write all nested JsonValue objects
-            jsonGenerator.write(jsonObject);
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
 
-            jsonGenerator.flush();
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+
+                jsonGenerator.writeStartObject("nonMatchedObject");
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // "nonMatchedObject" object
+
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+
+                jsonGenerator.writeStartObject("notObfuscated");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // "notObfuscated" object
+                jsonGenerator.writeEnd(); // root object
+
+                jsonGenerator.flush();
+            }
+            assertObfuscated(destination.toString());
         }
-        assertObfuscated(destination.toString());
-    }
 
-    @SuppressWarnings("resource")
-    private JsonGenerator createJsonGenerator(StringBuilder destination) {
-        JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(destination));
-        JSONObfuscator obfuscator = createObfuscator(JSONObfuscator.builder());
-        return obfuscator.createJsonGenerator(writer);
-    }
+        @Test
+        @DisplayName("using long and double")
+        @SuppressWarnings("resource")
+        void testUsingLongAndDouble() {
+            StringBuilder destination = new StringBuilder();
+            try (JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456L);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
 
-    private void assertObfuscated(String result) {
-        String expected = readResource("JSONObfuscator.expected.valid.all.pretty-printed");
-        assertEquals(expected, result);
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456L);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456L);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+
+                jsonGenerator.writeStartObject("nonMatchedObject");
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456L);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // "nonMatchedObject" object
+
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456L);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456L);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456L);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+
+                jsonGenerator.writeStartObject("notObfuscated");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456L);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", 123456L);
+                jsonGenerator.write("float", 1234.56);
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", 123456L);
+                jsonGenerator.write("notMatchedFloat", 1234.56);
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // "notObfuscated" object
+                jsonGenerator.writeEnd(); // root object
+
+                jsonGenerator.flush();
+            }
+            assertObfuscated(destination.toString());
+        }
+
+        @Test
+        @DisplayName("using BigInteger and BigDecimal")
+        @SuppressWarnings("resource")
+        void testUsingBigIntegerAndBigDecimal() {
+            StringBuilder destination = new StringBuilder();
+            try (JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", BigInteger.valueOf(123456));
+                jsonGenerator.write("float", new BigDecimal("1234.56"));
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", BigInteger.valueOf(123456));
+                jsonGenerator.write("float", new BigDecimal("1234.56"));
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
+                jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+
+                jsonGenerator.writeStartObject("nonMatchedObject");
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
+                jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // "nonMatchedObject" object
+
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", BigInteger.valueOf(123456));
+                jsonGenerator.write("float", new BigDecimal("1234.56"));
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", BigInteger.valueOf(123456));
+                jsonGenerator.write("float", new BigDecimal("1234.56"));
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
+                jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+
+                jsonGenerator.writeStartObject("notObfuscated");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", BigInteger.valueOf(123456));
+                jsonGenerator.write("float", new BigDecimal("1234.56"));
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeNull("null");
+
+                jsonGenerator.writeStartObject("object");
+                jsonGenerator.write("string", "string\"int");
+                jsonGenerator.write("int", BigInteger.valueOf(123456));
+                jsonGenerator.write("float", new BigDecimal("1234.56"));
+                jsonGenerator.write("booleanTrue", true);
+                jsonGenerator.write("booleanFalse", false);
+                jsonGenerator.writeStartArray("nested");
+                jsonGenerator.writeStartObject();
+                jsonGenerator.write("prop1", "1");
+                jsonGenerator.write("prop2", "2");
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "nested" array
+                jsonGenerator.writeEnd(); // "object" object
+
+                jsonGenerator.writeStartArray("array");
+                jsonGenerator.writeStartArray();
+                jsonGenerator.write("1");
+                jsonGenerator.write("2");
+                jsonGenerator.writeEnd(); // anonymous array
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeEnd(); // anonymous object
+                jsonGenerator.writeEnd(); // "array" array
+
+                jsonGenerator.write("notMatchedString", "123456");
+                jsonGenerator.write("notMatchedInt", BigInteger.valueOf(123456));
+                jsonGenerator.write("notMatchedFloat", new BigDecimal("1234.56"));
+                jsonGenerator.write("notMatchedBooleanTrue", true);
+                jsonGenerator.write("notMatchedBooleanFalse", false);
+                jsonGenerator.writeNull("nonMatchedNull");
+                jsonGenerator.writeEnd(); // "notObfuscated" object
+                jsonGenerator.writeEnd(); // root object
+
+                jsonGenerator.flush();
+            }
+            assertObfuscated(destination.toString());
+        }
+
+        @Test
+        @DisplayName("using JsonValue")
+        @SuppressWarnings("resource")
+        void testUsingJsonValue() {
+            String input = readResource("JSONObfuscator.input.valid.json");
+
+            StringBuilder destination = new StringBuilder();
+            try (JsonParser jsonParser = Json.createParser(new StringReader(input));
+                    JsonGenerator jsonGenerator = createJsonGenerator(destination)) {
+
+                assertTrue(jsonParser.hasNext());
+                assertEquals(Event.START_OBJECT, jsonParser.next());
+                JsonObject jsonObject = jsonParser.getObject();
+                // This will recursively write all nested JsonValue objects
+                jsonGenerator.write(jsonObject);
+
+                jsonGenerator.flush();
+            }
+            assertObfuscated(destination.toString());
+        }
+
+        @SuppressWarnings("resource")
+        private JsonGenerator createJsonGenerator(StringBuilder destination) {
+            JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(destination));
+            JSONObfuscator obfuscator = createObfuscator(JSONObfuscator.builder(), propertyObfuscator);
+            return obfuscator.createJsonGenerator(writer);
+        }
+
+        private void assertObfuscated(String result) {
+            String expected = readResource(expectedResource);
+            assertEquals(expected, result);
+        }
     }
 }

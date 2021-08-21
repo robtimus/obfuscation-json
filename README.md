@@ -32,7 +32,7 @@ If the structure of the original JSON document needs to be kept intact, you shou
 
 ## Producing valid JSON
 
-If string values are obfuscated, the obfuscated value remains quoted. For other values, the obfuscated values are not quoted. This could lead to invalid JSON:
+If string values are obfuscated, the obfuscated value remains quoted. For other values, the obfuscated values are not quoted. This could lead to invalid JSON. For instance:
 
     {
       "boolean": ***
@@ -42,7 +42,7 @@ For most use cases this is not an issue. If the obfuscated JSON needs to be vali
 
     Obfuscator obfuscator = JSONObfuscator.builder()
             .withProperty("boolean", Obfuscator.fixedLength(3))
-            .obfuscateToString()
+            .produceValidJSON()
             .build();
 
 This will turn the above result into this:
@@ -56,7 +56,7 @@ An exception is made for [Obfuscator.none()](https://robtimus.github.io/obfuscat
     Obfuscator obfuscator = JSONObfuscator.builder()
             .withProperty("object", Obfuscator.none())
             .withProperty("boolean", Obfuscator.fixedLength(3))
-            .obfuscateToString()
+            .produceValidJSON()
             .build();
 
 Possible output:

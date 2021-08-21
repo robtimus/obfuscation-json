@@ -139,16 +139,16 @@ class JSONObfuscatorTest {
             }
 
             @Nested
-            @DisplayName("to string")
-            class ObfuscateToString {
+            @DisplayName("producing valid JSON")
+            class ProducingValidJSON {
 
                 @Nested
                 @DisplayName("pretty printed")
                 class PrettyPrinted extends ObfuscatorTest {
 
                     PrettyPrinted() {
-                        super("JSONObfuscator.input.valid.json", "to-string/JSONObfuscator.expected.valid.all.pretty-printed",
-                                () -> createObfuscator(builder().withPrettyPrinting(true).obfuscateToString()));
+                        super("JSONObfuscator.input.valid.json", "valid-json/JSONObfuscator.expected.valid.all.pretty-printed",
+                                () -> createObfuscator(builder().withPrettyPrinting(true).produceValidJSON()));
                     }
 
                     @Override
@@ -164,8 +164,8 @@ class JSONObfuscatorTest {
                 class NotPrettyPrinted extends ObfuscatorTest {
 
                     NotPrettyPrinted() {
-                        super("JSONObfuscator.input.valid.json", "to-string/JSONObfuscator.expected.valid.all",
-                                () -> createObfuscator(builder().withPrettyPrinting(false).obfuscateToString()));
+                        super("JSONObfuscator.input.valid.json", "valid-json/JSONObfuscator.expected.valid.all",
+                                () -> createObfuscator(builder().withPrettyPrinting(false).produceValidJSON()));
                     }
 
                     @Override
@@ -215,16 +215,16 @@ class JSONObfuscatorTest {
             }
 
             @Nested
-            @DisplayName("to string")
-            class ObfuscateToString {
+            @DisplayName("producing valid JSON")
+            class ProducingValidJSON {
 
                 @Nested
                 @DisplayName("pretty printed")
                 class PrettyPrinted extends ObfuscatorTest {
 
                     PrettyPrinted() {
-                        super("JSONObfuscator.input.valid.json", "to-string/JSONObfuscator.expected.valid.scalar.pretty-printed",
-                                () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(true).obfuscateToString()));
+                        super("JSONObfuscator.input.valid.json", "valid-json/JSONObfuscator.expected.valid.scalar.pretty-printed",
+                                () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(true).produceValidJSON()));
                     }
 
                     @Override
@@ -240,8 +240,8 @@ class JSONObfuscatorTest {
                 class NotPrettyPrinted extends ObfuscatorTest {
 
                     NotPrettyPrinted() {
-                        super("JSONObfuscator.input.valid.json", "to-string/JSONObfuscator.expected.valid.scalar",
-                                () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(false).obfuscateToString()));
+                        super("JSONObfuscator.input.valid.json", "valid-json/JSONObfuscator.expected.valid.scalar",
+                                () -> createObfuscator(builder().scalarsOnlyByDefault().withPrettyPrinting(false).produceValidJSON()));
                     }
 
                     @Override
@@ -262,6 +262,17 @@ class JSONObfuscatorTest {
             ObfuscatingScalarsOverridden() {
                 super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.scalar.pretty-printed",
                         () -> createObfuscatorObfuscatingScalarsOnly(builder().allByDefault()));
+            }
+        }
+
+        @Nested
+        @DisplayName("obfuscating none")
+        @TestInstance(Lifecycle.PER_CLASS)
+        class ObfuscatingNone extends ObfuscatorTest {
+
+            ObfuscatingNone() {
+                super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.obfuscating-none.pretty-printed",
+                        () -> createObfuscator(builder(), none()));
             }
         }
     }
@@ -290,15 +301,15 @@ class JSONObfuscatorTest {
         }
 
         @Nested
-        @DisplayName("obfuscating to string")
-        class ObfuscateToString {
+        @DisplayName("producing valid JSON")
+        class ProducingValidJSON {
 
             @Nested
             @DisplayName("pretty printed")
             class PrettyPrinted extends InvalidJSONTest {
 
                 PrettyPrinted() {
-                    super("to-string/JSONObfuscator.expected.invalid.pretty-printed", true, () -> builder().obfuscateToString());
+                    super("valid-json/JSONObfuscator.expected.invalid.pretty-printed", true, () -> builder().produceValidJSON());
                 }
             }
 
@@ -307,7 +318,7 @@ class JSONObfuscatorTest {
             class NotPrettyPrinted extends InvalidJSONTest {
 
                 NotPrettyPrinted() {
-                    super("to-string/JSONObfuscator.expected.invalid", false, () -> builder().obfuscateToString());
+                    super("valid-json/JSONObfuscator.expected.invalid", false, () -> builder().produceValidJSON());
                 }
             }
         }
@@ -366,15 +377,15 @@ class JSONObfuscatorTest {
         }
 
         @Nested
-        @DisplayName("obfuscating to string")
-        class ObfuscateToString {
+        @DisplayName("producing valid JSON")
+        class ProducingValidJSON {
 
             @Nested
             @DisplayName("pretty printed with warning")
             class PrettyPrintedWithWarning extends TruncatedJSONTest {
 
                 PrettyPrintedWithWarning() {
-                    super("to-string/JSONObfuscator.expected.truncated.pretty-printed", true, true, () -> builder().obfuscateToString());
+                    super("valid-json/JSONObfuscator.expected.truncated.pretty-printed", true, true, () -> builder().produceValidJSON());
                 }
             }
 
@@ -383,7 +394,7 @@ class JSONObfuscatorTest {
             class PrettyPrintedWithoutWarning extends TruncatedJSONTest {
 
                 PrettyPrintedWithoutWarning() {
-                    super("to-string/JSONObfuscator.expected.truncated.no-warning.pretty-printed", true, false, () -> builder().obfuscateToString());
+                    super("valid-json/JSONObfuscator.expected.truncated.no-warning.pretty-printed", true, false, () -> builder().produceValidJSON());
                 }
             }
 
@@ -392,7 +403,7 @@ class JSONObfuscatorTest {
             class NotPrettyPrintedWithWarning extends TruncatedJSONTest {
 
                 NotPrettyPrintedWithWarning() {
-                    super("to-string/JSONObfuscator.expected.truncated", false, true, () -> builder().obfuscateToString());
+                    super("valid-json/JSONObfuscator.expected.truncated", false, true, () -> builder().produceValidJSON());
                 }
             }
 
@@ -401,7 +412,7 @@ class JSONObfuscatorTest {
             class NotPrettyPrintedWithoutWarning extends TruncatedJSONTest {
 
                 NotPrettyPrintedWithoutWarning() {
-                    super("to-string/JSONObfuscator.expected.truncated.no-warning", false, false, () -> builder().obfuscateToString());
+                    super("valid-json/JSONObfuscator.expected.truncated.no-warning", false, false, () -> builder().produceValidJSON());
                 }
             }
         }
@@ -523,6 +534,10 @@ class JSONObfuscatorTest {
 
     static JSONObfuscator createObfuscator(Builder builder) {
         Obfuscator obfuscator = fixedLength(3);
+        return createObfuscator(builder, obfuscator);
+    }
+
+    static JSONObfuscator createObfuscator(Builder builder, Obfuscator obfuscator) {
         return builder
                 .withProperty("string", obfuscator)
                 .withProperty("int", obfuscator)
