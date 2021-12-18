@@ -303,30 +303,30 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     public JsonGenerator write(JsonValue value) {
         // Don't delegate but call correct write methods based on the type
         switch (value.getValueType()) {
-        case OBJECT:
-            write(value.asJsonObject());
-            break;
-        case ARRAY:
-            write(value.asJsonArray());
-            break;
-        case STRING:
-            write((JsonString) value);
-            break;
-        case NUMBER:
-            write((JsonNumber) value);
-            break;
-        case TRUE:
-            write(true);
-            break;
-        case FALSE:
-            write(false);
-            break;
-        case NULL:
-            writeNull();
-            break;
-        default:
-            // Should not occur
-            break;
+            case OBJECT:
+                write(value.asJsonObject());
+                break;
+            case ARRAY:
+                write(value.asJsonArray());
+                break;
+            case STRING:
+                write((JsonString) value);
+                break;
+            case NUMBER:
+                write((JsonNumber) value);
+                break;
+            case TRUE:
+                write(true);
+                break;
+            case FALSE:
+                write(false);
+                break;
+            case NULL:
+                writeNull();
+                break;
+            default:
+                // Should not occur
+                break;
         }
 
         return this;

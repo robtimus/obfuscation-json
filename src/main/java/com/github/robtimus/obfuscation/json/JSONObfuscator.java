@@ -109,39 +109,39 @@ public final class JSONObfuscator extends Obfuscator {
             while (jsonParser.hasNext()) {
                 Event event = jsonParser.next();
                 switch (event) {
-                case START_OBJECT:
-                    jsonGenerator.writeStartObject();
-                    break;
-                case END_OBJECT:
-                    jsonGenerator.writeEnd();
-                    break;
-                case START_ARRAY:
-                    jsonGenerator.writeStartArray();
-                    break;
-                case END_ARRAY:
-                    jsonGenerator.writeEnd();
-                    break;
-                case KEY_NAME:
-                    jsonGenerator.writeKey(jsonParser.getString());
-                    break;
-                case VALUE_STRING:
-                    jsonGenerator.write(jsonParser.getString());
-                    break;
-                case VALUE_NUMBER:
-                    jsonGenerator.write(jsonParser.getValue());
-                    break;
-                case VALUE_TRUE:
-                    jsonGenerator.write(true);
-                    break;
-                case VALUE_FALSE:
-                    jsonGenerator.write(false);
-                    break;
-                case VALUE_NULL:
-                    jsonGenerator.writeNull();
-                    break;
-                default:
-                    LOGGER.warn(Messages.JSONObfuscator.unexpectedEvent.get(event));
-                    break;
+                    case START_OBJECT:
+                        jsonGenerator.writeStartObject();
+                        break;
+                    case END_OBJECT:
+                        jsonGenerator.writeEnd();
+                        break;
+                    case START_ARRAY:
+                        jsonGenerator.writeStartArray();
+                        break;
+                    case END_ARRAY:
+                        jsonGenerator.writeEnd();
+                        break;
+                    case KEY_NAME:
+                        jsonGenerator.writeKey(jsonParser.getString());
+                        break;
+                    case VALUE_STRING:
+                        jsonGenerator.write(jsonParser.getString());
+                        break;
+                    case VALUE_NUMBER:
+                        jsonGenerator.write(jsonParser.getValue());
+                        break;
+                    case VALUE_TRUE:
+                        jsonGenerator.write(true);
+                        break;
+                    case VALUE_FALSE:
+                        jsonGenerator.write(false);
+                        break;
+                    case VALUE_NULL:
+                        jsonGenerator.writeNull();
+                        break;
+                    default:
+                        LOGGER.warn(Messages.JSONObfuscator.unexpectedEvent.get(event));
+                        break;
                 }
             }
 
