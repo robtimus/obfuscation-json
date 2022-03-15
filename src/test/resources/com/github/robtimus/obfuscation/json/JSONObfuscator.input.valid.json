@@ -57,7 +57,7 @@
     "notMatchedBooleanTrue": true,
     "notMatchedBooleanFalse": false,
     "nonMatchedNull": null
-   } ],
+  } ],
   "notObfuscated": {
     "string": "string\"int",
     "int": 123456,

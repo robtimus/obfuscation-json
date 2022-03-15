@@ -21,6 +21,7 @@ import static com.github.robtimus.obfuscation.Obfuscator.fixedLength;
 import static com.github.robtimus.obfuscation.Obfuscator.none;
 import static com.github.robtimus.obfuscation.json.JSONObfuscatorTest.createObfuscator;
 import static com.github.robtimus.obfuscation.json.JSONObfuscatorTest.readResource;
+import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.appendAtMost;
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.writer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -513,7 +514,7 @@ class ObfuscatingJsonGeneratorTest {
         private JsonGenerator createJsonGenerator(StringBuilder destination) {
             JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(destination));
             JSONObfuscator obfuscator = createObfuscator(JSONObfuscator.builder(), propertyObfuscator);
-            return obfuscator.createJsonGenerator(writer);
+            return obfuscator.createJsonGenerator(writer, appendAtMost(destination, Long.MAX_VALUE));
         }
 
         private void assertObfuscated(String result) {

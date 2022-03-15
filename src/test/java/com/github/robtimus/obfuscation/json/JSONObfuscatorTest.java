@@ -23,6 +23,7 @@ import static com.github.robtimus.obfuscation.json.JSONObfuscator.builder;
 import static com.github.robtimus.obfuscation.support.CaseSensitivity.CASE_SENSITIVE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -72,8 +73,13 @@ class JSONObfuscatorTest {
                 arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).excludeObjects()), false),
                 arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).excludeArrays()), false),
                 arguments(obfuscator, builder().build(), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).produceValidJSON()), false),
                 arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).withPrettyPrinting(false)), false),
                 arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).withMalformedJSONWarning(null)), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).limitTo(Long.MAX_VALUE)), true),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).limitTo(1024)), false),
+                arguments(obfuscator, createObfuscator(builder().withProperty("test", none()).limitTo(Long.MAX_VALUE).withTruncatedIndicator(null)),
+                        false),
                 arguments(obfuscator, createObfuscator(true, false), false),
                 arguments(obfuscator, "foo", false),
         };
@@ -85,6 +91,23 @@ class JSONObfuscatorTest {
         Obfuscator obfuscator = createObfuscator(true);
         assertEquals(obfuscator.hashCode(), obfuscator.hashCode());
         assertEquals(obfuscator.hashCode(), createObfuscator(true).hashCode());
+    }
+
+    @Nested
+    @DisplayName("Builder")
+    class BuilderTest {
+
+        @Nested
+        @DisplayName("limitTo")
+        class LimitTo {
+
+            @Test
+            @DisplayName("negative limit")
+            void testNegativeLimit() {
+                Builder builder = builder();
+                assertThrows(IllegalArgumentException.class, () -> builder.limitTo(-1));
+            }
+        }
     }
 
     @Nested
@@ -273,6 +296,34 @@ class JSONObfuscatorTest {
             ObfuscatingNone() {
                 super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.obfuscating-none.pretty-printed",
                         () -> createObfuscator(builder(), none()));
+            }
+        }
+
+        @Nested
+        @DisplayName("limited")
+        @TestInstance(Lifecycle.PER_CLASS)
+        class Limited {
+
+            @Nested
+            @DisplayName("with truncated indicator")
+            @TestInstance(Lifecycle.PER_CLASS)
+            class WithTruncatedIndicator extends ObfuscatorTest {
+
+                WithTruncatedIndicator() {
+                    super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.limited.with-indicator",
+                            () -> createObfuscator(builder().limitTo(657)));
+                }
+            }
+
+            @Nested
+            @DisplayName("without truncated indicator")
+            @TestInstance(Lifecycle.PER_CLASS)
+            class WithoutTruncatedIndicator extends ObfuscatorTest {
+
+                WithoutTruncatedIndicator() {
+                    super("JSONObfuscator.input.valid.json", "JSONObfuscator.expected.valid.limited.without-indicator",
+                            () -> createObfuscator(builder().limitTo(657).withTruncatedIndicator(null)));
+                }
             }
         }
     }

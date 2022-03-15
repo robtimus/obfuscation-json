@@ -31,12 +31,14 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
+import com.github.robtimus.obfuscation.support.LimitAppendable;
 
 class ObfuscatingJsonGenerator implements JsonGenerator {
 
     private final JsonGeneratorFactory jsonGeneratorFactory;
     private final JsonGenerator originalDelegate;
     private final JSONObfuscatorWriter writer;
+    private final LimitAppendable appendable;
     private final Map<String, PropertyConfig> properties;
     private final boolean produceValidJSON;
 
@@ -48,12 +50,13 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     private int depth = 0;
 
     @SuppressWarnings("resource")
-    ObfuscatingJsonGenerator(JsonGeneratorFactory jsonGeneratorFactory, JSONObfuscatorWriter writer, Map<String, PropertyConfig> properties,
-            boolean produceValidJSON) {
+    ObfuscatingJsonGenerator(JsonGeneratorFactory jsonGeneratorFactory, JSONObfuscatorWriter writer, LimitAppendable appendable,
+            Map<String, PropertyConfig> properties, boolean produceValidJSON) {
 
         this.jsonGeneratorFactory = jsonGeneratorFactory;
         this.originalDelegate = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer));
         this.writer = writer;
+        this.appendable = appendable;
         this.properties = properties;
         this.produceValidJSON = produceValidJSON;
 
@@ -108,10 +111,11 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     @SuppressWarnings("resource")
     public JsonGenerator writeKey(String name) {
-        if (currentProperty == null) {
+        if (currentProperty == null && !appendable.limitExceeded()) {
             currentProperty = properties.get(name);
         }
-        // else in a nested object or array that's being obfuscated; do nothing
+        // else in a nested object or array that's being obfuscated, or the destination limit has already been exceed; do nothing
+        // The limitExceed check is added to prevent any complex logic being executed for content that will not be appended anyway
 
         try {
             writer.preventFlush();
