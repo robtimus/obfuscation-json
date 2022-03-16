@@ -62,8 +62,8 @@
   </issueManagement>
 
   <properties>
-    <version.json-api>1.1.4</version.json-api>
-    <version.json-impl>1.1.4</version.json-impl>
+    <version.json-api>1.1.6</version.json-api>
+    <version.json-impl>1.1.6</version.json-impl>
     <version.obfuscation-core>1.4</version.obfuscation-core>
   </properties>
 
@@ -75,14 +75,14 @@
     </dependency>
 
     <dependency>
-      <groupId>javax.json</groupId>
-      <artifactId>javax.json-api</artifactId>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
       <version>${version.json-api}</version>
     </dependency>
 
     <dependency>
       <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
+      <artifactId>jakarta.json</artifactId>
       <version>${version.json-impl}</version>
       <scope>runtime</scope>
     </dependency>
