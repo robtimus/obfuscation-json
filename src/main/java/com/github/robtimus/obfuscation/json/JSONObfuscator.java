@@ -19,9 +19,7 @@ package com.github.robtimus.obfuscation.json;
 
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.appendAtMost;
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.checkStartAndEnd;
-import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.copyTo;
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.counting;
-import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.discardAll;
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.reader;
 import static com.github.robtimus.obfuscation.support.ObfuscatorUtils.writer;
 import java.io.IOException;
@@ -99,7 +97,7 @@ public final class JSONObfuscator extends Obfuscator {
         LimitAppendable appendable = appendAtMost(destination, limit);
         @SuppressWarnings("resource")
         JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(appendable));
-        obfuscateText(reader, s, end, writer, appendable);
+        obfuscateText(reader, writer, appendable);
         if (appendable.limitExceeded() && truncatedIndicator != null) {
             destination.append(String.format(truncatedIndicator, end - start));
         }
@@ -107,20 +105,19 @@ public final class JSONObfuscator extends Obfuscator {
 
     @Override
     public void obfuscateText(Reader input, Appendable destination) throws IOException {
-        StringBuilder contents = new StringBuilder();
         @SuppressWarnings("resource")
-        CountingReader reader = counting(copyTo(input, contents));
+        CountingReader reader = counting(input);
         LimitAppendable appendable = appendAtMost(destination, limit);
         @SuppressWarnings("resource")
         JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(appendable));
-        obfuscateText(reader, contents, -1, writer, appendable);
+        obfuscateText(reader, writer, appendable);
         if (appendable.limitExceeded() && truncatedIndicator != null) {
             destination.append(String.format(truncatedIndicator, reader.count()));
         }
     }
 
     @SuppressWarnings("resource")
-    private void obfuscateText(Reader input, CharSequence s, int end, JSONObfuscatorWriter writer, LimitAppendable appendable) throws IOException {
+    private void obfuscateText(Reader input, JSONObfuscatorWriter writer, LimitAppendable appendable) throws IOException {
         try (JsonParser jsonParser = JSON_PROVIDER.createParser(new DontCloseReader(input));
                 JsonGenerator jsonGenerator = createJsonGenerator(writer, appendable)) {
 
@@ -164,11 +161,7 @@ public final class JSONObfuscator extends Obfuscator {
                 }
             }
 
-            // Read the remainder so the final append will include all text
-            discardAll(input);
             writer.assertNonObfuscating();
-            int index = end == -1 ? s.length() : end;
-            writer.append(s, index, end == -1 ? s.length() : end);
         } catch (JsonParsingException e) {
             LOGGER.warn(Messages.JSONObfuscator.malformedJSON.warning.get(), e);
             writer.endObfuscating();
