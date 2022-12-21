@@ -156,14 +156,14 @@ public final class JSONObfuscator extends Obfuscator {
                         jsonGenerator.writeNull();
                         break;
                     default:
-                        LOGGER.warn(Messages.JSONObfuscator.unexpectedEvent.get(event));
+                        LOGGER.warn(Messages.JSONObfuscator.unexpectedEvent(event));
                         break;
                 }
             }
 
             writer.assertNonObfuscating();
         } catch (JsonParsingException e) {
-            LOGGER.warn(Messages.JSONObfuscator.malformedJSON.warning.get(), e);
+            LOGGER.warn(Messages.JSONObfuscator.malformedJSON.warning(), e);
             writer.endObfuscating();
             if (malformedJSONWarning != null) {
                 writer.write(malformedJSONWarning);
@@ -511,7 +511,7 @@ public final class JSONObfuscator extends Obfuscator {
             prettyPrint = true;
             produceValidJSON = false;
 
-            malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text.get();
+            malformedJSONWarning = Messages.JSONObfuscator.malformedJSON.text();
 
             limit = Long.MAX_VALUE;
             truncatedIndicator = "... (total: %d)"; //$NON-NLS-1$
