@@ -62,8 +62,8 @@
   </issueManagement>
 
   <properties>
-    <version.json-api>1.1.6</version.json-api>
-    <version.json-impl>1.1.6</version.json-impl>
+    <version.json-api>2.1.3</version.json-api>
+    <version.json-impl>2.0.1</version.json-impl>
     <version.obfuscation-core>1.5</version.obfuscation-core>
     <version.slf4j>1.7.36</version.slf4j>
   </properties>
