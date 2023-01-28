@@ -1,4 +1,9 @@
 # obfuscation-json
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.robtimus/obfuscation-json)](https://search.maven.org/artifact/com.github.robtimus/obfuscation-json)
+[![Build Status](https://github.com/robtimus/obfuscation-json/actions/workflows/build.yml/badge.svg)](https://github.com/robtimus/obfuscation-json/actions/workflows/build.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.github.robtimus%3Aobfuscation-json&metric=alert_status)](https://sonarcloud.io/summary/overall?id=com.github.robtimus%3Aobfuscation-json)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.github.robtimus%3Aobfuscation-json&metric=coverage)](https://sonarcloud.io/summary/overall?id=com.github.robtimus%3Aobfuscation-json)
+[![Known Vulnerabilities](https://snyk.io/test/github/robtimus/obfuscation-json/badge.svg)](https://snyk.io/test/github/robtimus/obfuscation-json)
 
 Provides functionality for obfuscating JSON documents. This can be useful for logging such documents, e.g. as part of request/response logging, where sensitive properties like passwords should not be logged as-is.
 
