@@ -113,8 +113,9 @@ class JSONObfuscatorWriterTest {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
-                writer.startObfuscate(Obfuscator.all());
-                assertThrows(AssertionError.class, () -> writer.startObfuscate(Obfuscator.all()));
+                Obfuscator obfuscator = Obfuscator.all();
+                writer.startObfuscate(obfuscator);
+                assertThrows(AssertionError.class, () -> writer.startObfuscate(obfuscator));
                 writer.write("hello world");
                 assertEquals("***********", delegate.toString());
             }
