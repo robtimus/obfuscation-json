@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.function.Supplier;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.stream.JsonGenerator;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import com.github.robtimus.obfuscation.Obfuscator;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ObfuscationMode;
 
 @SuppressWarnings("nls")
 class ObfuscatingJsonGeneratorTest {
@@ -46,7 +48,30 @@ class ObfuscatingJsonGeneratorTest {
     class ObfuscatingAll extends GeneratorTest {
 
         ObfuscatingAll() {
-            super(fixedLength(3), "JSONObfuscator.expected.valid.all.pretty-printed");
+            super(JSONObfuscator::builder, fixedLength(3), fixedLength(3, 'o'), fixedLength(3, 'a'),
+                    "JSONObfuscator.expected.valid.all.pretty-printed");
+        }
+    }
+
+    @Nested
+    @DisplayName("obfuscating with INHERIT mode")
+    class ObfuscatingInherited extends GeneratorTest {
+
+        ObfuscatingInherited() {
+            super(() -> JSONObfuscator.builder().forObjectsByDefault(ObfuscationMode.INHERIT).forArraysByDefault(ObfuscationMode.INHERIT),
+                    fixedLength(3), fixedLength(3, 'o'), fixedLength(3, 'a'), "JSONObfuscator.expected.valid.inherited");
+        }
+    }
+
+    @Nested
+    @DisplayName("obfuscating with INHERIT_OVERRIDABLE mode")
+    class ObfuscatingInheritedOverridable extends GeneratorTest {
+
+        ObfuscatingInheritedOverridable() {
+            super(() -> JSONObfuscator.builder()
+                    .forObjectsByDefault(ObfuscationMode.INHERIT_OVERRIDABLE)
+                    .forArraysByDefault(ObfuscationMode.INHERIT_OVERRIDABLE),
+                    fixedLength(3), fixedLength(3, 'o'), fixedLength(3, 'a'), "JSONObfuscator.expected.valid.inherited-overridable");
         }
     }
 
@@ -55,17 +80,26 @@ class ObfuscatingJsonGeneratorTest {
     class ObfuscatingNone extends GeneratorTest {
 
         ObfuscatingNone() {
-            super(none(), "JSONObfuscator.expected.valid.obfuscating-none.pretty-printed");
+            super(JSONObfuscator::builder, none(), none(), none(), "JSONObfuscator.expected.valid.obfuscating-none.pretty-printed");
         }
     }
 
     abstract static class GeneratorTest {
 
+        private final Supplier<JSONObfuscator.Builder> builderSupplier;
         private final Obfuscator propertyObfuscator;
+        private final Obfuscator objectPropertyObfuscator;
+        private final Obfuscator arrayPropertyObfuscator;
         private final String expectedResource;
 
-        GeneratorTest(Obfuscator propertyObfuscator, String expectedResource) {
+        GeneratorTest(Supplier<JSONObfuscator.Builder> builderSupplier,
+                Obfuscator propertyObfuscator, Obfuscator objectPropertyObfuscator, Obfuscator arrayPropertyObfuscator,
+                String expectedResource) {
+
+            this.builderSupplier = builderSupplier;
             this.propertyObfuscator = propertyObfuscator;
+            this.objectPropertyObfuscator = objectPropertyObfuscator;
+            this.arrayPropertyObfuscator = arrayPropertyObfuscator;
             this.expectedResource = expectedResource;
         }
 
@@ -513,7 +547,8 @@ class ObfuscatingJsonGeneratorTest {
         @SuppressWarnings("resource")
         private JsonGenerator createJsonGenerator(StringBuilder destination) {
             JSONObfuscatorWriter writer = new JSONObfuscatorWriter(writer(destination));
-            JSONObfuscator obfuscator = createObfuscator(JSONObfuscator.builder(), propertyObfuscator);
+            JSONObfuscator obfuscator = createObfuscator(builderSupplier.get(),
+                    propertyObfuscator, objectPropertyObfuscator, arrayPropertyObfuscator);
             return obfuscator.createJsonGenerator(writer, appendAtMost(destination, Long.MAX_VALUE));
         }
 

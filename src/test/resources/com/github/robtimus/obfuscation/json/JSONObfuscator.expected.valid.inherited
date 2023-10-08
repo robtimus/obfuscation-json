@@ -5,8 +5,28 @@
     "booleanTrue": ***,
     "booleanFalse": ***,
     "null": ***,
-    "object": ooo,
-    "array": aaa,
+    "object": {
+        "string": "ooo",
+        "int": ooo,
+        "float": ooo,
+        "booleanTrue": ooo,
+        "booleanFalse": ooo,
+        "null": ooo,
+        "nested": [
+            {
+                "prop1": "ooo",
+                "prop2": "ooo"
+            }
+        ]
+    },
+    "array": [
+        [
+            "aaa",
+            "aaa"
+        ],
+        {
+        }
+    ],
     "notMatchedString": "123456",
     "notMatchedInt": 123456,
     "notMatchedFloat": 1234.56,
@@ -29,8 +49,27 @@
             "booleanTrue": ***,
             "booleanFalse": ***,
             "null": ***,
-            "object": ooo,
-            "array": aaa,
+            "object": {
+                "string": "ooo",
+                "int": ooo,
+                "float": ooo,
+                "booleanTrue": ooo,
+                "booleanFalse": ooo,
+                "nested": [
+                    {
+                        "prop1": "ooo",
+                        "prop2": "ooo"
+                    }
+                ]
+            },
+            "array": [
+                [
+                    "aaa",
+                    "aaa"
+                ],
+                {
+                }
+            ],
             "notMatchedString": "123456",
             "notMatchedInt": 123456,
             "notMatchedFloat": 1234.56,
