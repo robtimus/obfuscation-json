@@ -331,68 +331,56 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
         // Don't delegate but call correct write methods based on the type
         switch (value.getValueType()) {
             case OBJECT:
-                write(value.asJsonObject());
-                break;
+                return write(value.asJsonObject());
             case ARRAY:
-                write(value.asJsonArray());
-                break;
+                return write(value.asJsonArray());
             case STRING:
-                write((JsonString) value);
-                break;
+                return write((JsonString) value);
             case NUMBER:
-                write((JsonNumber) value);
-                break;
+                return write((JsonNumber) value);
             case TRUE:
-                write(true);
-                break;
+                return write(true);
             case FALSE:
-                write(false);
-                break;
+                return write(false);
             case NULL:
-                writeNull();
-                break;
+                return writeNull();
             default:
                 // Should not occur
-                break;
+                return this;
         }
-
-        return this;
     }
 
     @SuppressWarnings("resource")
-    private void write(JsonObject object) {
+    private JsonGenerator write(JsonObject object) {
         writeStartObject();
         for (Map.Entry<String, JsonValue> entry : object.entrySet()) {
             write(entry.getKey(), entry.getValue());
         }
-        writeEnd();
+        return writeEnd();
     }
 
     @SuppressWarnings("resource")
-    private void write(JsonArray array) {
+    private JsonGenerator write(JsonArray array) {
         writeStartArray();
         for (JsonValue element : array) {
             write(element);
         }
-        writeEnd();
+        return writeEnd();
     }
 
-    @SuppressWarnings("resource")
-    private void write(JsonString string) {
-        write(string.getString());
+    private JsonGenerator write(JsonString string) {
+        return write(string.getString());
     }
 
-    @SuppressWarnings("resource")
-    private void write(JsonNumber number) {
+    private JsonGenerator write(JsonNumber number) {
         if (number.isIntegral()) {
             try {
-                write(number.longValueExact());
+                return write(number.longValueExact());
             } catch (@SuppressWarnings("unused") ArithmeticException e) {
-                write(number.bigIntegerValue());
+                return write(number.bigIntegerValue());
             }
-        } else {
-            write(number.bigDecimalValue());
         }
+        return write(number.bigDecimalValue());
     }
 
     @Override
