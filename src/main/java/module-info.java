@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+/**
+ * Provides functionality for obfuscating JSON using the Java API for Processing JSON (JSR 374).
+ */
 module com.github.robtimus.obfuscation.json {
     requires transitive com.github.robtimus.obfuscation;
     requires jakarta.json;
