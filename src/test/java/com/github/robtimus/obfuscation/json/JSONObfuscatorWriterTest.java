@@ -86,7 +86,7 @@ class JSONObfuscatorWriterTest {
         void testObfuscating() throws IOException {
             try (JSONObfuscatorWriter writer = new JSONObfuscatorWriter(new StringWriter())) {
                 writer.startObfuscate(Obfuscator.all());
-                assertThrows(AssertionError.class, () -> writer.assertNonObfuscating());
+                assertThrows(AssertionError.class, writer::assertNonObfuscating);
             }
         }
     }
@@ -132,7 +132,7 @@ class JSONObfuscatorWriterTest {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
-                assertThrows(AssertionError.class, () -> writer.endObfuscate());
+                assertThrows(AssertionError.class, writer::endObfuscate);
                 writer.write("hello world");
                 assertEquals("hello world", delegate.toString());
             }
@@ -175,7 +175,7 @@ class JSONObfuscatorWriterTest {
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
                 writer.startObfuscate(Obfuscator.all());
-                assertThrows(AssertionError.class, () -> writer.startUnquote());
+                assertThrows(AssertionError.class, writer::startUnquote);
                 writer.write("hello world");
                 assertEquals("***********", delegate.toString());
             }
@@ -192,7 +192,7 @@ class JSONObfuscatorWriterTest {
             try (StringWriter delegate = new StringWriter();
                     JSONObfuscatorWriter writer = new JSONObfuscatorWriter(delegate)) {
 
-                assertThrows(AssertionError.class, () -> writer.endUnquote());
+                assertThrows(AssertionError.class, writer::endUnquote);
                 writer.write("hello world");
                 assertEquals("hello world", delegate.toString());
             }
@@ -206,7 +206,7 @@ class JSONObfuscatorWriterTest {
 
                 writer.startUnquote();
                 writer.write("hello world\"");
-                assertThrows(AssertionError.class, () -> writer.endUnquote());
+                assertThrows(AssertionError.class, writer::endUnquote);
                 assertEquals("", delegate.toString());
             }
             try (StringWriter delegate = new StringWriter();
@@ -214,7 +214,7 @@ class JSONObfuscatorWriterTest {
 
                 writer.startUnquote();
                 writer.write("\"hello world");
-                assertThrows(AssertionError.class, () -> writer.endUnquote());
+                assertThrows(AssertionError.class, writer::endUnquote);
                 assertEquals("", delegate.toString());
             }
             try (StringWriter delegate = new StringWriter();
@@ -222,7 +222,7 @@ class JSONObfuscatorWriterTest {
 
                 writer.startUnquote();
                 writer.write("\"");
-                assertThrows(AssertionError.class, () -> writer.endUnquote());
+                assertThrows(AssertionError.class, writer::endUnquote);
                 assertEquals("", delegate.toString());
             }
         }
