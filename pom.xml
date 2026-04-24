@@ -132,7 +132,7 @@
           <configuration>
             <links>
               <link>https://robtimus.github.io/obfuscation-core/apidocs/</link>
-              <link>https://docs.oracle.com/javaee/7/api/</link>
+              <link>https://jakarta.ee/specifications/platform/11/apidocs/</link>
             </links>
           </configuration>
         </plugin>
