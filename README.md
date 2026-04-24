@@ -123,7 +123,7 @@ This library uses the Java API for Processing JSON ([JSR 374](https://www.jcp.or
   <exclusions>
     <exclusion>
       <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
+      <artifactId>jakarta.json</artifactId>
     </exclusion>
   </exclusions>
 </dependency>
