@@ -26,17 +26,13 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
-import jakarta.json.JsonArray;
 import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ObfuscationMode;
 import com.github.robtimus.obfuscation.support.LimitAppendable;
 
-class ObfuscatingJsonGenerator implements JsonGenerator {
+class ObfuscatingJsonGenerator implements AutoCloseable {
 
     private final JsonGeneratorFactory jsonGeneratorFactory;
     private final JsonGenerator originalDelegate;
@@ -72,9 +68,8 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     // Writing will flush the jsonGenerator after each write, so writes are done to the correct writer at the time.
     // The try-finally will ensure that these flushes are not propagated to the writer's backing writer.
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator writeStartObject() {
+    void writeStartObject() {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null) {
             if (currentProperty.depth == 0) {
@@ -106,21 +101,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
         } finally {
             writer.allowFlush();
         }
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator writeStartObject(String name) {
-        // Don't delegate but split instead
-        writeKey(name);
-        writeStartObject();
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator writeKey(String name) {
+    void writeKey(String name) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if ((currentProperty == null || currentProperty.allowsOverriding()) && !appendable.limitExceeded()) {
             PropertyConfig config = properties.get(name);
@@ -139,12 +123,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
         } finally {
             writer.allowFlush();
         }
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator writeStartArray() {
+    void writeStartArray() {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null) {
             if (currentProperty.depth == 0) {
@@ -176,102 +158,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
         } finally {
             writer.allowFlush();
         }
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator writeStartArray(String name) {
-        // Don't delegate but split instead
-        writeKey(name);
-        writeStartArray();
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, JsonValue value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, String value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, BigInteger value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, BigDecimal value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, int value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, long value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, double value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(String name, boolean value) {
-        // Don't delegate but split instead
-        writeKey(name);
-        write(value);
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator writeNull(String name) {
-        // Don't delegate but split instead
-        writeKey(name);
-        writeNull();
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator writeEnd() {
+    void writeEnd() {
         try {
             writer.preventFlush();
             delegate.writeEnd();
@@ -292,7 +182,6 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // else still in a nested object that's being obfuscated
         }
         // else currently no object is being obfuscated
-        return this;
     }
 
     private void startObfuscating(ObfuscatedProperty currentProperty) {
@@ -326,66 +215,20 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
         }
     }
 
-    @Override
-    public JsonGenerator write(JsonValue value) {
-        // Don't delegate but call correct write methods based on the type
-        switch (value.getValueType()) {
-            case OBJECT:
-                return write(value.asJsonObject());
-            case ARRAY:
-                return write(value.asJsonArray());
-            case STRING:
-                return write((JsonString) value);
-            case NUMBER:
-                return write((JsonNumber) value);
-            case TRUE:
-                return write(true);
-            case FALSE:
-                return write(false);
-            case NULL:
-                return writeNull();
-            default:
-                // Should not occur
-                return this;
-        }
-    }
-
-    @SuppressWarnings("resource")
-    private JsonGenerator write(JsonObject object) {
-        writeStartObject();
-        for (Map.Entry<String, JsonValue> entry : object.entrySet()) {
-            write(entry.getKey(), entry.getValue());
-        }
-        return writeEnd();
-    }
-
-    @SuppressWarnings("resource")
-    private JsonGenerator write(JsonArray array) {
-        writeStartArray();
-        for (JsonValue element : array) {
-            write(element);
-        }
-        return writeEnd();
-    }
-
-    private JsonGenerator write(JsonString string) {
-        return write(string.getString());
-    }
-
-    private JsonGenerator write(JsonNumber number) {
+    void write(JsonNumber number) {
         if (number.isIntegral()) {
             try {
-                return write(number.longValueExact());
+                write(number.longValueExact());
             } catch (@SuppressWarnings("unused") ArithmeticException e) {
-                return write(number.bigIntegerValue());
+                write(number.bigIntegerValue());
             }
+        } else {
+            write(number.bigDecimalValue());
         }
-        return write(number.bigDecimalValue());
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator write(String value) {
+    void write(String value) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeString(currentProperty, value);
@@ -397,13 +240,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
-
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator write(BigDecimal value) {
+    private void write(BigDecimal value) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, value.toString());
@@ -415,13 +255,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
-
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator write(BigInteger value) {
+    private void write(BigInteger value) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, value.toString());
@@ -433,31 +270,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
-
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator write(int value) {
-        ObfuscatedProperty currentProperty = currentProperties.peekLast();
-        if (currentProperty != null && currentProperty.obfuscateScalar()) {
-            writeNonString(currentProperty, Integer.toString(value));
-
-            if (currentProperty.depth == 0) {
-                currentProperties.removeLast();
-            }
-        } else {
-            // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
-            delegate.write(value);
-        }
-
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(long value) {
+    private void write(long value) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, Long.toString(value));
@@ -469,31 +285,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
-
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator write(double value) {
-        ObfuscatedProperty currentProperty = currentProperties.peekLast();
-        if (currentProperty != null && currentProperty.obfuscateScalar()) {
-            writeNonString(currentProperty, Double.toString(value));
-
-            if (currentProperty.depth == 0) {
-                currentProperties.removeLast();
-            }
-        } else {
-            // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
-            delegate.write(value);
-        }
-
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public JsonGenerator write(boolean value) {
+    void write(boolean value) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, Boolean.toString(value));
@@ -505,13 +300,10 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
-
-        return this;
     }
 
-    @Override
     @SuppressWarnings("resource")
-    public JsonGenerator writeNull() {
+    void writeNull() {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, "null"); //$NON-NLS-1$
@@ -523,8 +315,6 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.writeNull();
         }
-
-        return this;
     }
 
     private void writeString(ObfuscatedProperty currentProperty, CharSequence value) {
@@ -568,11 +358,6 @@ class ObfuscatingJsonGenerator implements JsonGenerator {
     @Override
     public void close() {
         delegate.close();
-    }
-
-    @Override
-    public void flush() {
-        delegate.flush();
     }
 
     private static final class ObfuscatedProperty {

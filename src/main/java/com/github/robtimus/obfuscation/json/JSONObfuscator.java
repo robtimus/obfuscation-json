@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import jakarta.json.JsonException;
+import jakarta.json.JsonNumber;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
@@ -120,7 +121,7 @@ public final class JSONObfuscator extends Obfuscator {
     @SuppressWarnings("resource")
     private void obfuscateText(Reader input, JSONObfuscatorWriter writer, LimitAppendable appendable) throws IOException {
         try (JsonParser jsonParser = JSON_PROVIDER.createParser(new DontCloseReader(input));
-                JsonGenerator jsonGenerator = createJsonGenerator(writer, appendable)) {
+                ObfuscatingJsonGenerator jsonGenerator = createJsonGenerator(writer, appendable)) {
 
             // Cannot abort early as that could lead to errors due to incomplete JSON
             while (jsonParser.hasNext()) {
@@ -145,7 +146,7 @@ public final class JSONObfuscator extends Obfuscator {
                         jsonGenerator.write(jsonParser.getString());
                         break;
                     case VALUE_NUMBER:
-                        jsonGenerator.write(jsonParser.getValue());
+                        jsonGenerator.write((JsonNumber) jsonParser.getValue()); // NOSONAR, the cast is necessary
                         break;
                     case VALUE_TRUE:
                         jsonGenerator.write(true);
@@ -174,7 +175,7 @@ public final class JSONObfuscator extends Obfuscator {
         }
     }
 
-    JsonGenerator createJsonGenerator(JSONObfuscatorWriter writer, LimitAppendable appendable) {
+    private ObfuscatingJsonGenerator createJsonGenerator(JSONObfuscatorWriter writer, LimitAppendable appendable) {
         return new ObfuscatingJsonGenerator(jsonGeneratorFactory, writer, appendable, properties, produceValidJSON);
     }
 
