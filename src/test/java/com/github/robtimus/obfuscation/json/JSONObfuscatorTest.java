@@ -397,7 +397,7 @@ class JSONObfuscatorTest {
             }
         }
 
-        private class InvalidJSONTest extends ObfuscatorTest {
+        private abstract class InvalidJSONTest extends ObfuscatorTest {
 
             InvalidJSONTest(String expectedResource, boolean prettyPrint) {
                 super("JSONObfuscator.input.invalid", expectedResource, () -> createObfuscator(prettyPrint));
@@ -491,7 +491,7 @@ class JSONObfuscatorTest {
             }
         }
 
-        private class TruncatedJSONTest extends ObfuscatorTest {
+        private abstract class TruncatedJSONTest extends ObfuscatorTest {
 
             TruncatedJSONTest(String expectedResource, boolean prettyPrint, boolean includeWarning) {
                 super("JSONObfuscator.input.truncated", expectedResource, () -> createObfuscator(prettyPrint, includeWarning));
