@@ -24,12 +24,14 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
 import jakarta.json.JsonNumber;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
-import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ObfuscationMode;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.ObfuscationMode;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.ValueType;
 import com.github.robtimus.obfuscation.support.LimitAppendable;
 
 class ObfuscatingJsonGenerator implements AutoCloseable {
@@ -38,7 +40,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
     private final JsonGenerator originalDelegate;
     private final JSONObfuscatorWriter writer;
     private final LimitAppendable appendable;
-    private final Map<String, PropertyConfig> properties;
+    private final Map<ValueType, Map<String, PropertyConfig>> properties;
     private final boolean produceValidJSON;
 
     private final StringBuilder captured;
@@ -46,11 +48,19 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     private JsonGenerator delegate;
 
+    /*
+     * To perform obfuscator lookups based not just on property names but also value types, the lookup needs to be delayed to when a new value is
+     * encountered. This should only be done directly after a property name. If it is done for every value then it will also be done for array
+     * elements. This flag is set to true only from propertyName(), and reset to false after performing a lookup.
+     */
+    private boolean needsObfuscatorLookup;
+    private String currentPropertyName;
+
     private final Deque<ObfuscatedProperty> currentProperties = new ArrayDeque<>();
 
     @SuppressWarnings("resource")
     ObfuscatingJsonGenerator(JsonGeneratorFactory jsonGeneratorFactory, JSONObfuscatorWriter writer, LimitAppendable appendable,
-            Map<String, PropertyConfig> properties, boolean produceValidJSON) {
+                             Map<ValueType, Map<String, PropertyConfig>> properties, boolean produceValidJSON) {
 
         this.jsonGeneratorFactory = jsonGeneratorFactory;
         this.originalDelegate = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer));
@@ -70,6 +80,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void writeStartObject() {
+        lookupConfigIfNeeded(ValueType.OBJECT);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null) {
             if (currentProperty.depth == 0) {
@@ -80,9 +91,6 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
                     currentProperty.depth++;
 
                     startObfuscating(currentProperty);
-                } else if (obfuscationMode == ObfuscationMode.EXCLUDE) {
-                    // There is an obfuscator for the object property, but the obfuscation mode prohibits obfuscating objects, so discard the property
-                    currentProperties.removeLast();
                 } else {
                     currentProperty.obfuscationMode = obfuscationMode;
                     currentProperty.depth++;
@@ -107,11 +115,8 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
     void writeKey(String name) {
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if ((currentProperty == null || currentProperty.allowsOverriding()) && !appendable.limitExceeded()) {
-            PropertyConfig config = properties.get(name);
-            if (config != null) {
-                currentProperty = new ObfuscatedProperty(config);
-                currentProperties.addLast(currentProperty);
-            }
+            needsObfuscatorLookup = true;
+            currentPropertyName = name;
         }
         // else in a nested object or array that's being obfuscated, or the destination limit has already been exceed; do nothing
         // The limitExceed check is added to prevent any complex logic being executed for content that will not be appended anyway
@@ -127,6 +132,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void writeStartArray() {
+        lookupConfigIfNeeded(ValueType.ARRAY);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null) {
             if (currentProperty.depth == 0) {
@@ -137,9 +143,6 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
                     currentProperty.depth++;
 
                     startObfuscating(currentProperty);
-                } else if (obfuscationMode == ObfuscationMode.EXCLUDE) {
-                    // There is an obfuscator for the array property, but the obfuscation mode prohibits obfuscating arrays, so discard the property
-                    currentProperties.removeLast();
                 } else {
                     currentProperty.obfuscationMode = obfuscationMode;
                     currentProperty.depth++;
@@ -229,6 +232,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void write(String value) {
+        lookupConfigIfNeeded(ValueType.STRING);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeString(currentProperty, value);
@@ -244,6 +248,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     private void write(BigDecimal value) {
+        lookupConfigIfNeeded(ValueType.NUMBER);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, value.toString());
@@ -259,6 +264,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     private void write(BigInteger value) {
+        lookupConfigIfNeeded(ValueType.NUMBER);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, value.toString());
@@ -274,6 +280,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     private void write(long value) {
+        lookupConfigIfNeeded(ValueType.NUMBER);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, Long.toString(value));
@@ -289,6 +296,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void write(boolean value) {
+        lookupConfigIfNeeded(ValueType.BOOLEAN);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, Boolean.toString(value));
@@ -304,6 +312,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void writeNull() {
+        lookupConfigIfNeeded(ValueType.NULL);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null && currentProperty.obfuscateScalar()) {
             writeNonString(currentProperty, "null"); //$NON-NLS-1$
@@ -314,6 +323,17 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
         } else {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.writeNull();
+        }
+    }
+
+    private void lookupConfigIfNeeded(ValueType valueType) {
+        if (needsObfuscatorLookup) {
+            PropertyConfig config = properties.getOrDefault(valueType, Collections.emptyMap()).get(currentPropertyName);
+            if (config != null) {
+                ObfuscatedProperty currentProperty = new ObfuscatedProperty(config);
+                currentProperties.addLast(currentProperty);
+            }
+            needsObfuscatorLookup = false;
         }
     }
 
@@ -372,7 +392,6 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
         private boolean allowsOverriding() {
             // OBFUSCATE and INHERITED do not allow overriding
-            // No need to include EXCLUDE; if that occurs the ObfuscatedProperty is discarded
             return obfuscationMode == ObfuscationMode.INHERIT_OVERRIDABLE;
         }
 
@@ -384,7 +403,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
         private boolean obfuscateScalar() {
             // Don't obfuscate the scalar if Obfuscator.none() is used
             // Obfuscate if depth == 0 (the property is for the scalar itself),
-            // or if the obfuscation mode is INHERITED or INHERITED_OVERRIDABLE (EXCLUDE is discarded)
+            // or if the obfuscation mode is INHERITED or INHERITED_OVERRIDABLE
             return config.performObfuscation
                     && (depth == 0 || obfuscationMode != ObfuscationMode.OBFUSCATE);
         }
