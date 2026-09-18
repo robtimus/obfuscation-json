@@ -535,7 +535,7 @@ class JSONObfuscatorTest {
             }
         }
 
-        private abstract class TruncatedJSONTest extends ObfuscatorTest {
+        private abstract static class TruncatedJSONTest extends ObfuscatorTest {
 
             TruncatedJSONTest(String expectedResource, boolean prettyPrint, boolean includeWarning) {
                 super("JSONObfuscator.input.truncated", expectedResource, () -> createObfuscator(prettyPrint, includeWarning));
