@@ -107,7 +107,7 @@ JSONObfuscator.builder()
         .includeArraysByDefault()
  */
 JSONObfuscator.builder()
-        .withValueTypesByDefault(ValueType.SCALAR, ValueType.ARRAYS, ValueType.NULL)
+        .withValueTypesByDefault(ValueType.SCALAR, ValueType.ARRAY, ValueType.NULL)
         // or .withValueTypesByDefault(ValueType.ALL) to also include objects
         .forArraysByDefault(ObfuscationMode.OBFUSCATE)
 ```
@@ -231,7 +231,7 @@ JSONObfuscator.builder()
  */
 JSONObfuscator.builder()
         .withProperty("foo", obfuscator, property -> property
-                .withValueTypes(ValueType.SCALAR, ValueType.ARRAYS, ValueType.NULL)
+                .withValueTypes(ValueType.SCALAR, ValueType.ARRAY, ValueType.NULL)
                 // or .withValueTypes(ValueType.ALL) to also include objects
                 .forArrays(ObfuscationMode.OBFUSCATE))
 ```
