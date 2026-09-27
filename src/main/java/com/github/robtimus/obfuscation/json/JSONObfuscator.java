@@ -357,7 +357,7 @@ public final class JSONObfuscator extends Obfuscator {
             }
             propertiesRepresentation.append(property).append("=[");
             if (propertyConfigurer.caseSensitivity == CaseSensitivity.CASE_INSENSITIVE) {
-                propertiesRepresentation.append("caseInsensitive, ");
+                propertiesRepresentation.append("caseInsensitive,");
             }
             propertiesRepresentation.append("valueTypes=").append(propertyConfigurer.valueTypes);
             propertiesRepresentation.append(",obfuscator=").append(obfuscator);
