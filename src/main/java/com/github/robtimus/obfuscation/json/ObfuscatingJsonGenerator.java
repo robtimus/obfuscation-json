@@ -30,8 +30,8 @@ import java.util.Map;
 import jakarta.json.JsonNumber;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
-import com.github.robtimus.obfuscation.json.JSONObfuscator.ObfuscationMode;
-import com.github.robtimus.obfuscation.json.JSONObfuscator.ValueType;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ObfuscationMode;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ValueType;
 import com.github.robtimus.obfuscation.support.LimitAppendable;
 
 class ObfuscatingJsonGenerator implements AutoCloseable {
@@ -85,7 +85,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
         if (currentProperty != null) {
             if (currentProperty.depth == 0) {
                 // The start of the object that's being obfuscated
-                ObfuscationMode obfuscationMode = currentProperty.config.forObjects;
+                ObfuscationMode obfuscationMode = currentProperty.config.forObjects();
                 if (obfuscationMode == ObfuscationMode.OBFUSCATE) {
                     currentProperty.obfuscationMode = obfuscationMode;
                     currentProperty.depth++;
@@ -137,7 +137,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
         if (currentProperty != null) {
             if (currentProperty.depth == 0) {
                 // The start of the array that's being obfuscated
-                ObfuscationMode obfuscationMode = currentProperty.config.forArrays;
+                ObfuscationMode obfuscationMode = currentProperty.config.forArrays();
                 if (obfuscationMode == ObfuscationMode.OBFUSCATE) {
                     currentProperty.obfuscationMode = obfuscationMode;
                     currentProperty.depth++;
@@ -193,7 +193,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
                 // A new delegate is needed to be able to start a new object or array
                 delegate = jsonGeneratorFactory.createGenerator(capturedWriter);
             } else {
-                writer.startObfuscate(currentProperty.config.obfuscator);
+                writer.startObfuscate(currentProperty.config.obfuscator());
             }
         }
     }
@@ -353,7 +353,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
     private void writeQuoted(ObfuscatedProperty currentProperty, CharSequence value) {
         try {
             writer.preventFlush();
-            delegate.write(currentProperty.config.obfuscator.obfuscateText(value).toString());
+            delegate.write(currentProperty.config.obfuscator().obfuscateText(value).toString());
             delegate.flush();
         } finally {
             writer.allowFlush();
@@ -365,7 +365,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
         try {
             writer.preventFlush();
             writer.startUnquote();
-            delegate.write(currentProperty.config.obfuscator.obfuscateText(value).toString());
+            delegate.write(currentProperty.config.obfuscator().obfuscateText(value).toString());
             delegate.flush();
             writer.endUnquote();
         } catch (IOException e) {
@@ -397,14 +397,14 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
         private boolean obfuscateStructure() {
             // Don't obfuscate the entire structure if Obfuscator.none() is used
-            return config.performObfuscation && obfuscationMode == ObfuscationMode.OBFUSCATE;
+            return config.performObfuscation() && obfuscationMode == ObfuscationMode.OBFUSCATE;
         }
 
         private boolean obfuscateScalar() {
             // Don't obfuscate the scalar if Obfuscator.none() is used
             // Obfuscate if depth == 0 (the property is for the scalar itself),
             // or if the obfuscation mode is INHERITED or INHERITED_OVERRIDABLE
-            return config.performObfuscation
+            return config.performObfuscation()
                     && (depth == 0 || obfuscationMode != ObfuscationMode.OBFUSCATE);
         }
     }

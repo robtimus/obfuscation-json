@@ -50,9 +50,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.Builder;
-import com.github.robtimus.obfuscation.json.JSONObfuscator.ObfuscationMode;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer;
-import com.github.robtimus.obfuscation.json.JSONObfuscator.ValueType;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ObfuscationMode;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ValueType;
 
 @SuppressWarnings("nls")
 @TestInstance(Lifecycle.PER_CLASS)
