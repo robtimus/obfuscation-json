@@ -24,9 +24,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Deque;
-import java.util.Map;
 import jakarta.json.JsonNumber;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
@@ -40,7 +38,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
     private final JsonGenerator originalDelegate;
     private final JSONObfuscatorWriter writer;
     private final LimitAppendable appendable;
-    private final Map<ValueType, Map<String, PropertyConfig>> properties;
+    private final PropertyConfig.Lookup properties;
     private final boolean produceValidJSON;
 
     private final StringBuilder captured;
@@ -60,7 +58,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     ObfuscatingJsonGenerator(JsonGeneratorFactory jsonGeneratorFactory, JSONObfuscatorWriter writer, LimitAppendable appendable,
-                             Map<ValueType, Map<String, PropertyConfig>> properties, boolean produceValidJSON) {
+                             PropertyConfig.Lookup properties, boolean produceValidJSON) {
 
         this.jsonGeneratorFactory = jsonGeneratorFactory;
         this.originalDelegate = jsonGeneratorFactory.createGenerator(new DontCloseWriter(writer));
@@ -328,7 +326,7 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     private void lookupConfigIfNeeded(ValueType valueType) {
         if (needsObfuscatorLookup) {
-            PropertyConfig config = properties.getOrDefault(valueType, Collections.emptyMap()).get(currentPropertyName);
+            PropertyConfig config = properties.find(currentPropertyName, valueType);
             if (config != null) {
                 ObfuscatedProperty currentProperty = new ObfuscatedProperty(config);
                 currentProperties.addLast(currentProperty);
