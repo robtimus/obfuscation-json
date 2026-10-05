@@ -67,6 +67,7 @@
     <version.json-api>2.1.3</version.json-api>
     <version.json-impl>2.0.1</version.json-impl>
     <version.junit>6.1.3</version.junit>
+    <version.junit-support>3.2</version.junit-support>
     <version.obfuscation-core>1.5</version.obfuscation-core>
     <version.slf4j>1.7.36</version.slf4j>
   </properties>
@@ -120,6 +121,13 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.robtimus</groupId>
+      <artifactId>junit-support</artifactId>
+      <version>${version.junit-support}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

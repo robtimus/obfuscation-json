@@ -28,8 +28,10 @@ import java.util.Deque;
 import jakarta.json.JsonNumber;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
+import jakarta.json.stream.JsonParser;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ObfuscationMode;
 import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyConfigurer.ValueType;
+import com.github.robtimus.obfuscation.json.JSONObfuscator.PropertyPath;
 import com.github.robtimus.obfuscation.support.LimitAppendable;
 
 class ObfuscatingJsonGenerator implements AutoCloseable {
@@ -52,8 +54,9 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
      * elements. This flag is set to true only from propertyName(), and reset to false after performing a lookup.
      */
     private boolean needsObfuscatorLookup;
-    private String currentPropertyName;
 
+    private final PropertyPath propertyPath = new PropertyPath();
+    private final Deque<JsonParser.Event> structure = new ArrayDeque<>();
     private final Deque<ObfuscatedProperty> currentProperties = new ArrayDeque<>();
 
     @SuppressWarnings("resource")
@@ -78,6 +81,8 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void writeStartObject() {
+        addToStructure(JsonParser.Event.START_OBJECT);
+
         lookupConfigIfNeeded(ValueType.OBJECT);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null) {
@@ -111,10 +116,11 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void writeKey(String name) {
+        pushToPropertyPath(name);
+
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if ((currentProperty == null || currentProperty.allowsOverriding()) && !appendable.limitExceeded()) {
             needsObfuscatorLookup = true;
-            currentPropertyName = name;
         }
         // else in a nested object or array that's being obfuscated, or the destination limit has already been exceed; do nothing
         // The limitExceed check is added to prevent any complex logic being executed for content that will not be appended anyway
@@ -130,6 +136,8 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
     @SuppressWarnings("resource")
     void writeStartArray() {
+        addToStructure(JsonParser.Event.START_ARRAY);
+
         lookupConfigIfNeeded(ValueType.ARRAY);
         ObfuscatedProperty currentProperty = currentProperties.peekLast();
         if (currentProperty != null) {
@@ -180,9 +188,20 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
 
                 currentProperties.removeLast();
             }
-            // else still in a nested object that's being obfuscated
+            // else still in a nested structure that's being obfuscated
         }
-        // else currently no object is being obfuscated
+        // else currently no structure is being obfuscated
+
+        popFromPropertyPath();
+        removeFromStructure();
+    }
+
+    private void addToStructure(JsonParser.Event startToken) {
+        structure.addLast(startToken);
+    }
+
+    private void removeFromStructure() {
+        structure.removeLast();
     }
 
     private void startObfuscating(ObfuscatedProperty currentProperty) {
@@ -226,6 +245,8 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
         } else {
             write(number.bigDecimalValue());
         }
+
+        popFromPropertyPath();
     }
 
     @SuppressWarnings("resource")
@@ -242,6 +263,8 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
+
+        popFromPropertyPath();
     }
 
     @SuppressWarnings("resource")
@@ -306,6 +329,8 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.write(value);
         }
+
+        popFromPropertyPath();
     }
 
     @SuppressWarnings("resource")
@@ -322,16 +347,28 @@ class ObfuscatingJsonGenerator implements AutoCloseable {
             // Not obfuscating, or in a nested object or array that's being obfuscated; just delegate
             delegate.writeNull();
         }
+
+        popFromPropertyPath();
     }
 
     private void lookupConfigIfNeeded(ValueType valueType) {
         if (needsObfuscatorLookup) {
-            PropertyConfig config = properties.find(currentPropertyName, valueType);
+            PropertyConfig config = properties.find(propertyPath, valueType);
             if (config != null) {
                 ObfuscatedProperty currentProperty = new ObfuscatedProperty(config);
                 currentProperties.addLast(currentProperty);
             }
             needsObfuscatorLookup = false;
+        }
+    }
+
+    private void pushToPropertyPath(String propertyName) {
+        propertyPath.push(propertyName);
+    }
+
+    private void popFromPropertyPath() {
+        if (structure.peekLast() == JsonParser.Event.START_OBJECT) {
+            propertyPath.pop();
         }
     }
 
